@@ -34,6 +34,14 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
+INCLUDEPATH  +=  C:\libs\opencv\build\install\include
+
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_core470.lib
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_highgui470.lib
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_imgcodecs470.lib
+
+
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

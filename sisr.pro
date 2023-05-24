@@ -43,6 +43,11 @@ LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_highgui470.lib
 LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_imgcodecs470.lib
 LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_imgproc470.lib
 
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_core470d.lib
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_highgui470d.lib
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_imgcodecs470d.lib
+LIBS  +=  C:\libs\opencv\build\install\x64\vc16\lib\opencv_imgproc470d.lib
+
 
 
 # Default rules for deployment.

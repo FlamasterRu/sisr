@@ -32,19 +32,23 @@ private slots:
 
     void on_pushButtonCount_clicked();  // здесь выполняются все операции увеличения разрешения
 
-    void on_horizontalSliderRPart_valueChanged(int value);  // листать кусочки ихображений
-    void on_horizontalSliderGPart_valueChanged(int value);
-    void on_horizontalSliderBPart_valueChanged(int value);
-    void on_horizontalSliderGreyPart_valueChanged(int value);
+    void on_horizontalSlider1Part_valueChanged(int value);  // листать кусочки изображений
+
+    void on_comboBoxScalling_currentTextChanged(const QString &arg1);
 
 private:
+    void DefaultTab();
     void InitStartImage(const int imageNum);    // рисует начальное изображение
+    QPixmap PixmapFromCVMat(const cv::Mat& image, QImage::Format format);
+    cv::Mat UpscalePartImage(const cv::Mat& image, int scale);
+    cv::Mat UpscalePartImageGrey(const cv::Mat& image, int scale);
 
 private:
     Ui::MainWindow *ui;
 
     QStringList mStartImageFileNames;
-    SISR mSISR;
+    SISR s1, s2, s3, s4;
+    cv::Mat mStartImage, mLRImage, mHRImage;
 };
 
 #endif // MAINWINDOW_H

@@ -14,11 +14,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->labelChoosedImageNum->setVisible(false);
     ui->pushButtonCount->setVisible(false);
 
-    // вкладка LR-HR пары
-    ui->horizontalSliderRPart->setVisible(false);
-    ui->horizontalSliderGPart->setVisible(false);
-    ui->horizontalSliderBPart->setVisible(false);
-    ui->horizontalSliderGreyPart->setVisible(false);
+    ui->comboBoxScalling->setVisible(false);
+    ui->comboBoxScalling->clear();
+    ui->comboBoxScalling->addItems(QStringList() << QString("2.0") << QStringList("4.0"));
+
+    ui->comboBoxImageType->setVisible(false);
+    ui->comboBoxImageType->clear();
+    ui->comboBoxImageType->addItems(QStringList() << QString("Grey"));
+
+    DefaultTab();
 }
 
 MainWindow::~MainWindow()
@@ -34,7 +38,8 @@ void MainWindow::on_pushButtonFilePath_clicked()
 //    {
 //        return; // ничего не указали
 //    }
-    QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    //QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    QString dirPath("D:/projects/other/HR");
 
     // получение имён всех изображений
     QDir dir(dirPath);
@@ -54,10 +59,39 @@ void MainWindow::on_pushButtonFilePath_clicked()
     ui->pushButtonSwipeLeft->setVisible(true);
     ui->pushButtonSwipeRight->setVisible(true);
     ui->labelChoosedImageNum->setVisible(true);
-    ui->pushButtonCount->setVisible(true);
     ui->labelChoosedImageNum->setText(QString("0/") + QString::number(mStartImageFileNames.size()));
+    ui->comboBoxScalling->setVisible(true);
+    ui->comboBoxImageType->setVisible(true);
+    ui->pushButtonCount->setVisible(true);
 
     InitStartImage(0);
+}
+
+void MainWindow::on_pushButtonCount_clicked()
+{
+    DefaultTab();
+    if (ui->comboBoxImageType->currentText() == QString("Grey"))
+    {
+        // вторая вкладка (исходное изображение)
+        cv::Mat LRGreyImage, HRGreyImage;
+        cv::cvtColor(mStartImage, HRGreyImage, cv::COLOR_RGB2GRAY);
+        ui->Image1->setPixmap(PixmapFromCVMat(HRGreyImage, QImage::Format_Grayscale8));
+        cv::cvtColor(mLRImage, LRGreyImage, cv::COLOR_RGB2GRAY);
+        ui->Image2->setPixmap(PixmapFromCVMat(LRGreyImage, QImage::Format_Grayscale8));
+
+        // третья вкладка (пары патчей)
+        s1.InitImage(LRGreyImage);
+        s1.CreateLRHRPairs();
+
+        ui->label1PartCur->setVisible(true);
+        ui->label1PartMax->setVisible(true);
+        ui->horizontalSlider1Part->setVisible(true);
+        ui->label1PartCur->setText(0);
+        ui->label1PartMax->setText(QString::number(s1.GetPairsCount()-1));
+        ui->horizontalSlider1Part->setMaximum(s1.GetPairsCount()-1);
+        ui->horizontalSlider1Part->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSlider1Part->setValue(0); // костыль, чтобы картинки обновились
+    }
 }
 
 void MainWindow::on_pushButtonSwipeLeft_clicked()
@@ -86,96 +120,105 @@ void MainWindow::on_pushButtonSwipeRight_clicked()
     InitStartImage(currentImageNum+1);
 }
 
-void MainWindow::InitStartImage(const int imageNum)
+void MainWindow::on_horizontalSlider1Part_valueChanged(int value)
 {
-    mSISR.InitImage(mStartImageFileNames[imageNum]);    // инициализация расчётов
-
-    ui->startImage->setPixmap(mSISR.GetStartImage());
-    ui->LRImage->setPixmap(mSISR.GetLRImage());
+    if (mStartImageFileNames.isEmpty())
+    {
+        return;
+    }
+    MPair p = s1.GetPair(value);
+    ui->RLRPart->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.first, 50), QImage::Format_Grayscale8));
+    ui->RHRPart->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.second, 20), QImage::Format_Grayscale8));
+    ui->label1PartCur->setText(QString::number(value));
 }
 
-void MainWindow::on_pushButtonCount_clicked()
+void MainWindow::on_comboBoxScalling_currentTextChanged(const QString &arg1)
 {
     if (mStartImageFileNames.isEmpty())
     {
         return;
     }
 
-    // разбиваем изображение на цветовые каналы
-    mSISR.SplitColors();
-    ui->RColorLRImage->setPixmap(mSISR.GetLRRed());
-    ui->GColorLRImage->setPixmap(mSISR.GetLRGreen());
-    ui->BColorLRImage->setPixmap(mSISR.GetLRBlue());
-    ui->GreyLRImage->setPixmap(mSISR.GetLRGrey());
-
-    // получаем пары LR-HR частей изображения
-    mSISR.CreateLRHRPairs();
-
-    ui->horizontalSliderRPart->setVisible(true);
-    ui->horizontalSliderGPart->setVisible(true);
-    ui->horizontalSliderBPart->setVisible(true);
-    ui->horizontalSliderGreyPart->setVisible(true);
-
-    ui->labelRPartMax->setText(QString::number(mSISR.GetPairsMax()) + QString("  |"));
-    ui->labelGPartMax->setText(QString::number(mSISR.GetPairsMax()) + QString("  |"));
-    ui->labelBPartMax->setText(QString::number(mSISR.GetPairsMax()) + QString("  |"));
-    ui->labelGreyPartMax->setText(QString::number(mSISR.GetPairsMax()));
-
-    ui->horizontalSliderRPart->setMaximum(mSISR.GetPairsMax());
-    ui->horizontalSliderGPart->setMaximum(mSISR.GetPairsMax());
-    ui->horizontalSliderBPart->setMaximum(mSISR.GetPairsMax());
-    ui->horizontalSliderGreyPart->setMaximum(mSISR.GetPairsMax());
-
-    ui->horizontalSliderRPart->setValue(1); // костыль, чтобы картинки обновились
-    ui->horizontalSliderGPart->setValue(1);
-    ui->horizontalSliderBPart->setValue(1);
-    ui->horizontalSliderGreyPart->setValue(1);
-    ui->horizontalSliderRPart->setValue(0);
-    ui->horizontalSliderGPart->setValue(0);
-    ui->horizontalSliderBPart->setValue(0);
-    ui->horizontalSliderGreyPart->setValue(0);
-}
-
-void MainWindow::on_horizontalSliderRPart_valueChanged(int value)
-{
-    if (mStartImageFileNames.isEmpty() || value >= mSISR.GetPairsMax())
+    // создаёт LR изображение, в зависимости от выбранной настройки
+    int scalling = 2;
+    if (ui->comboBoxScalling->currentText() == QString("2.0"))
     {
-        return;
+        scalling = 2;
     }
-    ui->RLRPart->setPixmap(mSISR.GetRPair(value).first);
-    ui->RHRPart->setPixmap(mSISR.GetRPair(value).second);
-    ui->labelRPartCur->setText(QString::number(value));
+    else if (ui->comboBoxScalling->currentText() == QString("4.0"))
+    {
+        scalling = 4;
+    }
+    cv::resize(mStartImage, mLRImage, cv::Size(mStartImage.cols/scalling, mStartImage.rows/scalling), cv::INTER_CUBIC);
+    ui->LRImage->setPixmap(PixmapFromCVMat(mLRImage, QImage::Format_RGB888));
 }
 
-void MainWindow::on_horizontalSliderGPart_valueChanged(int value)
+
+void MainWindow::DefaultTab()
 {
-    if (mStartImageFileNames.isEmpty() || value >= mSISR.GetPairsMax())
-    {
-        return;
-    }
-    ui->GLRPart->setPixmap(mSISR.GetGPair(value).first);
-    ui->GHRPart->setPixmap(mSISR.GetGPair(value).second);
-    ui->labelGPartCur->setText(QString::number(value));
+    // вкладка LR-HR пары
+    ui->label1PartCur->setVisible(false);
+    ui->label1PartMax->setVisible(false);
+    ui->horizontalSlider1Part->setVisible(false);
+    ui->label2PartCur->setVisible(false);
+    ui->label2PartMax->setVisible(false);
+    ui->horizontalSlider2Part->setVisible(false);
+    ui->label3PartCur->setVisible(false);
+    ui->label3PartMax->setVisible(false);
+    ui->horizontalSlider3Part->setVisible(false);
+    ui->label4PartCur->setVisible(false);
+    ui->label4PartMax->setVisible(false);
+    ui->horizontalSlider4Part->setVisible(false);
 }
 
-void MainWindow::on_horizontalSliderBPart_valueChanged(int value)
+void MainWindow::InitStartImage(const int imageNum)
 {
-    if (mStartImageFileNames.isEmpty() || value >= mSISR.GetPairsMax())
-    {
-        return;
-    }
-    ui->BLRPart->setPixmap(mSISR.GetBPair(value).first);
-    ui->BHRPart->setPixmap(mSISR.GetBPair(value).second);
-    ui->labelBPartCur->setText(QString::number(value));
+    mStartImage = cv::imread(mStartImageFileNames[imageNum].toStdString()); // чтение изображения
+    cv::cvtColor(mStartImage, mStartImage, cv::COLOR_BGR2RGB);  // преобразует к нормальной rgb палитре (читает в bgr)
+    ui->startImage->setPixmap(PixmapFromCVMat(mStartImage, QImage::Format_RGB888));
+    on_comboBoxScalling_currentTextChanged(ui->comboBoxScalling->currentText());
 }
 
-void MainWindow::on_horizontalSliderGreyPart_valueChanged(int value)
+QPixmap MainWindow::PixmapFromCVMat(const cv::Mat& image, QImage::Format format)
 {
-    if (mStartImageFileNames.isEmpty() || value >= mSISR.GetPairsMax())
-    {
-        return;
-    }
-    ui->GreyLRPart->setPixmap(mSISR.GetGreyPair(value).first);
-    ui->GreyHRPart->setPixmap(mSISR.GetGreyPair(value).second);
-    ui->labelGreyPartCur->setText(QString::number(value));
+    QImage qIm( (uchar*)image.data, image.cols, image.rows, image.step, format );
+    QPixmap pixel;
+    pixel.convertFromImage(qIm);
+    return pixel;
 }
+
+cv::Mat MainWindow::UpscalePartImage(const cv::Mat& image, int scale)
+{
+    cv::Mat res;
+    cv::resize(image, res, cv::Size(image.rows*scale, image.cols*scale), cv::INTER_NEAREST);
+    for (int i = 0; i < res.rows; ++i)
+    {
+        for (int j = 0; j < res.cols; ++j)
+        {
+            res.at<cv::Vec3b>(i,j)[0] = image.at<cv::Vec3b>(i/scale, j/scale)[0];
+            res.at<cv::Vec3b>(i,j)[1] = image.at<cv::Vec3b>(i/scale, j/scale)[1];
+            res.at<cv::Vec3b>(i,j)[2] = image.at<cv::Vec3b>(i/scale, j/scale)[2];
+        }
+    }
+    return res;
+}
+
+cv::Mat MainWindow::UpscalePartImageGrey(const cv::Mat& image, int scale)
+{
+    cv::Mat res;
+    cv::resize(image, res, cv::Size(image.rows*scale, image.cols*scale), cv::INTER_NEAREST);
+    for (int i = 0; i < res.rows; ++i)
+    {
+        for (int j = 0; j < res.cols; ++j)
+        {
+            res.at<uchar>(i,j) = image.at<uchar>(i/scale, j/scale); // серый цвет обходится только так
+        }
+    }
+    return res;
+}
+
+
+
+
+
+

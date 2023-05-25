@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QFrame" name="frameSettings">
       <property name="frameShape">
@@ -23,7 +23,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,0,0,0,0">
        <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
@@ -39,6 +39,20 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxImageType">
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBoxScalling">
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QFrame" name="frame">
@@ -119,7 +133,7 @@
        <enum>Qt::ClickFocus</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <property name="usesScrollButtons">
        <bool>true</bool>
@@ -223,32 +237,39 @@
       </widget>
       <widget class="QWidget" name="tabSplitColor">
        <attribute name="title">
-        <string>Цветовые каналы</string>
+        <string>Исходное изображение</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="2">
+         <widget class="QLabel" name="Image3">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="0">
-         <widget class="QLabel" name="RColorLRImage">
+         <widget class="QLabel" name="Image1">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLabel" name="Image4">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLabel" name="GColorLRImage">
+         <widget class="QLabel" name="Image2">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="BColorLRImage">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="GreyLRImage">
+        <item row="0" column="4">
+         <widget class="QLabel" name="Image5">
           <property name="text">
            <string/>
           </property>
@@ -276,7 +297,7 @@
          </widget>
         </item>
         <item row="4" column="6">
-         <widget class="QLabel" name="labelBPartCur">
+         <widget class="QLabel" name="label3PartCur">
           <property name="text">
            <string>0</string>
           </property>
@@ -290,28 +311,28 @@
          </widget>
         </item>
         <item row="4" column="7">
-         <widget class="QSlider" name="horizontalSliderBPart">
+         <widget class="QSlider" name="horizontalSlider3Part">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
         <item row="4" column="5">
-         <widget class="QLabel" name="labelGPartMax">
+         <widget class="QLabel" name="label2PartMax">
           <property name="text">
            <string>0</string>
           </property>
          </widget>
         </item>
         <item row="4" column="9">
-         <widget class="QLabel" name="labelGreyPartCur">
+         <widget class="QLabel" name="label4PartCur">
           <property name="text">
            <string>0</string>
           </property>
          </widget>
         </item>
         <item row="4" column="10">
-         <widget class="QSlider" name="horizontalSliderGreyPart">
+         <widget class="QSlider" name="horizontalSlider4Part">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -325,7 +346,7 @@
          </widget>
         </item>
         <item row="4" column="11">
-         <widget class="QLabel" name="labelGreyPartMax">
+         <widget class="QLabel" name="label4PartMax">
           <property name="text">
            <string>0</string>
           </property>
@@ -353,35 +374,35 @@
          </widget>
         </item>
         <item row="4" column="2">
-         <widget class="QLabel" name="labelRPartMax">
+         <widget class="QLabel" name="label1PartMax">
           <property name="text">
            <string>0</string>
           </property>
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QSlider" name="horizontalSliderRPart">
+         <widget class="QSlider" name="horizontalSlider1Part">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
         <item row="4" column="4">
-         <widget class="QSlider" name="horizontalSliderGPart">
+         <widget class="QSlider" name="horizontalSlider2Part">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="labelRPartCur">
+         <widget class="QLabel" name="label1PartCur">
           <property name="text">
            <string>0</string>
           </property>
          </widget>
         </item>
         <item row="4" column="3">
-         <widget class="QLabel" name="labelGPartCur">
+         <widget class="QLabel" name="label2PartCur">
           <property name="text">
            <string>0</string>
           </property>
@@ -395,7 +416,7 @@
          </widget>
         </item>
         <item row="4" column="8">
-         <widget class="QLabel" name="labelBPartMax">
+         <widget class="QLabel" name="label3PartMax">
           <property name="text">
            <string>0</string>
           </property>
@@ -413,7 +434,7 @@
      <x>0</x>
      <y>0</y>
      <width>1113</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

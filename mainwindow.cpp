@@ -73,14 +73,13 @@ void MainWindow::on_pushButtonCount_clicked()
     if (ui->comboBoxImageType->currentText() == QString("Grey"))
     {
         // вторая вкладка (исходное изображение)
-        cv::Mat LRGreyImage, HRGreyImage;
-        cv::cvtColor(mStartImage, HRGreyImage, cv::COLOR_RGB2GRAY);
-        ui->Image1->setPixmap(PixmapFromCVMat(HRGreyImage, QImage::Format_Grayscale8));
-        cv::cvtColor(mLRImage, LRGreyImage, cv::COLOR_RGB2GRAY);
-        ui->Image2->setPixmap(PixmapFromCVMat(LRGreyImage, QImage::Format_Grayscale8));
+        cv::cvtColor(mStartImage, mHRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image2->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
 
         // третья вкладка (пары патчей)
-        s1.InitImage(LRGreyImage);
+        s1.InitImage(mLRImage1);
         s1.CreateLRHRPairs();
 
         ui->label1PartCur->setVisible(true);
@@ -91,6 +90,19 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->horizontalSlider1Part->setMaximum(s1.GetPairsCount()-1);
         ui->horizontalSlider1Part->setValue(1); // костыль, чтобы картинки обновились
         ui->horizontalSlider1Part->setValue(0); // костыль, чтобы картинки обновились
+
+        // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
+        s1.AssemblyHRImage();
+
+        ui->horizontalSliderHRAssemb->setVisible(true);
+        ui->labelCurPatch->setVisible(true);
+        ui->labelPatchCount->setVisible(true);
+        ui->labelCurPatch->setText(0);
+        ui->labelPatchCount->setText(QString::number(s1.GetPatchesCount()-1));
+        ui->horizontalSliderHRAssemb->setMaximum(s1.GetPatchesCount()-1);
+        ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
+
     }
 }
 
@@ -153,6 +165,130 @@ void MainWindow::on_comboBoxScalling_currentTextChanged(const QString &arg1)
     ui->LRImage->setPixmap(PixmapFromCVMat(mLRImage, QImage::Format_RGB888));
 }
 
+void MainWindow::on_horizontalSliderHRAssemb_valueChanged(int value)
+{
+    ui->labelCurPatch->setText(QString::number(value));
+
+    ui->AssembPartLR1->setPixmap(QPixmap());
+    ui->AssembPartLR2->setPixmap(QPixmap());
+    ui->AssembPartLR3->setPixmap(QPixmap());
+    ui->AssembPartLR4->setPixmap(QPixmap());
+    ui->AssembPartLR5->setPixmap(QPixmap());
+    ui->AssembPartLR6->setPixmap(QPixmap());
+    ui->AssembPartLR7->setPixmap(QPixmap());
+    ui->AssembPartLR8->setPixmap(QPixmap());
+    ui->AssembPartHR1->setPixmap(QPixmap());
+    ui->AssembPartHR2->setPixmap(QPixmap());
+    ui->AssembPartHR3->setPixmap(QPixmap());
+    ui->AssembPartHR4->setPixmap(QPixmap());
+    ui->AssembPartHR5->setPixmap(QPixmap());
+    ui->AssembPartHR6->setPixmap(QPixmap());
+    ui->AssembPartHR7->setPixmap(QPixmap());
+    ui->AssembPartHR8->setPixmap(QPixmap());
+    ui->AssembPartStatistic1->setText(QString());
+    ui->AssembPartStatistic2->setText(QString());
+    ui->AssembPartStatistic3->setText(QString());
+    ui->AssembPartStatistic4->setText(QString());
+    ui->AssembPartStatistic5->setText(QString());
+    ui->AssembPartStatistic6->setText(QString());
+    ui->AssembPartStatistic7->setText(QString());
+    ui->AssembPartStatistic8->setText(QString());
+
+
+    Patch p = s1.GetPatch(value);
+
+    cv::Mat tmp;
+    mLRImage1.copyTo(tmp);
+    QPixmap map = PixmapFromCVMat(tmp, QImage::Format_Grayscale8);
+    QPainter painter(&map);
+    painter.setPen(QColor("red"));
+    painter.drawRect(p.rect.x, p.rect.y, p.rect.width, p.rect.height);
+    ui->LRImageAssemb->setPixmap(map);
+
+    ui->AssembPartLR->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.LR, 15), QImage::Format_Grayscale8));
+    ui->AssembPartHR->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.HR, 10), QImage::Format_Grayscale8));
+
+    int pairCount = p.patchNums.size();
+    double maxDist = 0;
+    double aveDist = 0;
+    double minDist = 1e40;
+    for (int i = 0; i < p.patchNums.size(); ++i)
+    {
+        if (p.distToPatches[i] > maxDist)
+        {
+            maxDist = p.distToPatches[i];
+        }
+        if (p.distToPatches[i] < minDist)
+        {
+            minDist = p.distToPatches[i];
+        }
+        aveDist += p.distToPatches[i];
+    }
+    aveDist /= static_cast<double>(pairCount);
+    ui->AssembStatistic->setText(QString("Количество похожих пар: ") + QString::number(pairCount) + QString("\n") +
+                                 QString("Максимальное отклонение: ") + QString::number(maxDist) + QString("\n") +
+                                 QString("Среднее отклонение: ") + QString::number(aveDist) + QString("\n") +
+                                 QString("Минимальное отклонение: ") + QString::number(minDist) + QString("\n"));
+
+    if (pairCount >= 1)
+    {
+        MPair pr = s1.GetPair(p.patchNums[0]);
+        ui->AssembPartLR1->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR1->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic1->setText(QString("Отклонение: ") + QString::number(p.distToPatches[0]));
+    }
+    if (pairCount >= 2)
+    {
+        MPair pr = s1.GetPair(p.patchNums[1]);
+        ui->AssembPartLR2->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR2->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic2->setText(QString("Отклонение: ") + QString::number(p.distToPatches[1]));
+    }
+    if (pairCount >= 3)
+    {
+        MPair pr = s1.GetPair(p.patchNums[2]);
+        ui->AssembPartLR3->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR3->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic3->setText(QString("Отклонение: ") + QString::number(p.distToPatches[2]));
+    }
+    if (pairCount >= 4)
+    {
+        MPair pr = s1.GetPair(p.patchNums[3]);
+        ui->AssembPartLR4->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR4->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic4->setText(QString("Отклонение: ") + QString::number(p.distToPatches[3]));
+    }
+    if (pairCount >= 5)
+    {
+        MPair pr = s1.GetPair(p.patchNums[4]);
+        ui->AssembPartLR5->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR5->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic5->setText(QString("Отклонение: ") + QString::number(p.distToPatches[4]));
+    }
+    if (pairCount >= 6)
+    {
+        MPair pr = s1.GetPair(p.patchNums[5]);
+        ui->AssembPartLR6->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR6->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic6->setText(QString("Отклонение: ") + QString::number(p.distToPatches[5]));
+    }
+    if (pairCount >= 7)
+    {
+        MPair pr = s1.GetPair(p.patchNums[6]);
+        ui->AssembPartLR7->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR7->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic7->setText(QString("Отклонение: ") + QString::number(p.distToPatches[6]));
+    }
+    if (pairCount >= 8)
+    {
+        MPair pr = s1.GetPair(p.patchNums[7]);
+        ui->AssembPartLR8->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
+        ui->AssembPartHR8->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
+        ui->AssembPartStatistic8->setText(QString("Отклонение: ") + QString::number(p.distToPatches[7]));
+    }
+
+}
+
 
 void MainWindow::DefaultTab()
 {
@@ -169,6 +305,12 @@ void MainWindow::DefaultTab()
     ui->label4PartCur->setVisible(false);
     ui->label4PartMax->setVisible(false);
     ui->horizontalSlider4Part->setVisible(false);
+
+    // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
+    s1.AssemblyHRImage();
+    ui->labelCurPatch->setVisible(false);
+    ui->labelPatchCount->setVisible(false);
+    ui->horizontalSliderHRAssemb->setVisible(false);
 }
 
 void MainWindow::InitStartImage(const int imageNum)
@@ -216,6 +358,9 @@ cv::Mat MainWindow::UpscalePartImageGrey(const cv::Mat& image, int scale)
     }
     return res;
 }
+
+
+
 
 
 

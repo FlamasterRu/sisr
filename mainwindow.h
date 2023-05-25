@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QKeyEvent>
+#include <QPainter>
 
 
 
@@ -36,6 +37,8 @@ private slots:
 
     void on_comboBoxScalling_currentTextChanged(const QString &arg1);
 
+    void on_horizontalSliderHRAssemb_valueChanged(int value);
+
 private:
     void DefaultTab();
     void InitStartImage(const int imageNum);    // рисует начальное изображение
@@ -48,6 +51,7 @@ private:
 
     QStringList mStartImageFileNames;
     SISR s1, s2, s3, s4;
+    cv::Mat mLRImage1, mHRImage1;
     cv::Mat mStartImage, mLRImage, mHRImage;
 };
 

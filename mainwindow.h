@@ -46,6 +46,11 @@ private:
     cv::Mat UpscalePartImage(const cv::Mat& image, int scale);
     cv::Mat UpscalePartImageGrey(const cv::Mat& image, int scale);
 
+    // метрики оценки качества
+    double SqDif(const cv::Mat& image1, const cv::Mat& image2);
+    double MaxDif(const cv::Mat& image1, const cv::Mat& image2);
+    double SSIM(const cv::Mat& image1, const cv::Mat& image2);
+
 private:
     Ui::MainWindow *ui;
 

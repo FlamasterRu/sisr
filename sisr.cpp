@@ -42,11 +42,11 @@ bool SISR::CreateLRHRPairs()
 {
     cv::Mat curImage;
     mLRImage.copyTo(curImage);
-    while (curImage.rows > 10 && curImage.cols > 10)  // ищем во всех разрешениях, с уменьшением в 0.9 раз
+    while (curImage.rows > 9 && curImage.cols > 9)  // ищем во всех разрешениях, с уменьшением в 0.9 раз
     {
-        for (int i = 0; i < curImage.rows - 9; ++i)
+        for (int i = 0; i < curImage.rows - 8; ++i)
         {
-            for (int j = 0; j < curImage.cols - 9; ++j)
+            for (int j = 0; j < curImage.cols - 8; ++j)
             {
                 cv::Mat HR(curImage, cv::Rect(i, j, 9, 9));
                 cv::Mat LR;
@@ -54,7 +54,7 @@ bool SISR::CreateLRHRPairs()
                 mPairs.push_back(MPair(LR, HR));
             }
         }
-        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.8, curImage.cols*0.8), cv::INTER_NEAREST);
+        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.95, curImage.cols*0.95), cv::INTER_NEAREST);
     }
 
     return true;
@@ -69,11 +69,12 @@ bool SISR::AssemblyHRImage()
     {
         for (int j = 0; j < mHRImage.cols; ++j)
         {
-            mHRImage.at<uchar>(i,j) = 254;
+            mHRImage.at<uchar>(i,j) = 240;
         }
     }
     for (int i = 0; i < mLRImage.rows - 2; ++i)
     {
+        std::cout << i << "/" << mLRImage.rows - 2 << std::endl;
         for (int j = 0; j < mLRImage.cols - 2; ++j)
         {
             cv::Mat LRpart(mLRImage, cv::Rect(i, j, 3, 3));
@@ -88,7 +89,7 @@ bool SISR::AssemblyHRImage()
             p.HR.copyTo(mHRImage(cv::Rect((i+1)*2-2, (j+1)*2-2, p.HR.cols, p.HR.rows)));
         }
     }
-
+    cv::resize(mHRImage, mHRImage, cv::Size(mLRImage.cols, mLRImage.rows), cv::INTER_CUBIC);
     return true;
 }
 

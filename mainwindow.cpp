@@ -107,6 +107,9 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
         ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
         ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+        double sqDif = 0, maxDif = 0, ssim = 0;
+        double psnr = cv::PSNR(mHRImage1, s1.GetHRImage());
+
     }
 }
 
@@ -362,6 +365,20 @@ cv::Mat MainWindow::UpscalePartImageGrey(const cv::Mat& image, int scale)
     return res;
 }
 
+double MainWindow::SqDif(const cv::Mat& image1, const cv::Mat& image2)
+{
+    return 0;
+}
+
+double MainWindow::MaxDif(const cv::Mat& image1, const cv::Mat& image2)
+{
+    return 0;
+}
+
+double MainWindow::SSIM(const cv::Mat& image1, const cv::Mat& image2)
+{
+    return 0;
+}
 
 
 

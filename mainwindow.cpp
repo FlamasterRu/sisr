@@ -103,6 +103,10 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
         ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
 
+        // пятая вкладка, результаты сборки изображения
+        ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
+        ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
     }
 }
 
@@ -307,7 +311,6 @@ void MainWindow::DefaultTab()
     ui->horizontalSlider4Part->setVisible(false);
 
     // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
-    s1.AssemblyHRImage();
     ui->labelCurPatch->setVisible(false);
     ui->labelPatchCount->setVisible(false);
     ui->horizontalSliderHRAssemb->setVisible(false);

@@ -8,7 +8,8 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-QMAKE_CXXFLAGS+=/openmp
+QMAKE_CXXFLAGS+= -openmp
+QMAKE_LFLAGS += -openmp
 
 TARGET = sisr
 TEMPLATE = app

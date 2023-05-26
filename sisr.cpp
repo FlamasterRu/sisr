@@ -25,6 +25,12 @@ Patch SISR::GetPatch(int i)
     return mPatches.at(i);
 }
 
+cv::Mat SISR::GetHRImage()
+{
+    return mHRImage;
+}
+
+
 
 bool SISR::InitImage(const cv::Mat& image)
 {
@@ -48,7 +54,7 @@ bool SISR::CreateLRHRPairs()
                 mPairs.push_back(MPair(LR, HR));
             }
         }
-        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.95, curImage.cols*0.95), cv::INTER_NEAREST);
+        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.8, curImage.cols*0.8), cv::INTER_NEAREST);
     }
 
     return true;
@@ -58,44 +64,51 @@ bool SISR::AssemblyHRImage()
 {
     QList<int> nearestPairs;
     QList<double> dist;
-    for (int i = 0; i < mLRImage.rows - 3; ++i)
+    mHRImage.create(mLRImage.rows*2 + 3, mLRImage.cols*2 + 3, CV_8UC1);
+    for (int i = 0; i < mHRImage.rows; ++i)
     {
-        for (int j = 0; j < mLRImage.cols - 3; ++j)
+        for (int j = 0; j < mHRImage.cols; ++j)
+        {
+            mHRImage.at<uchar>(i,j) = 254;
+        }
+    }
+    for (int i = 0; i < mLRImage.rows - 2; ++i)
+    {
+        for (int j = 0; j < mLRImage.cols - 2; ++j)
         {
             cv::Mat LRpart(mLRImage, cv::Rect(i, j, 3, 3));
             GetNearestPairsIDS(LRpart, nearestPairs, dist);
-            if (nearestPairs.size() != 0)
-            {
-                Patch p;
-                p.rect = cv::Rect(i, j, 3, 3);
-                p.patchNums = nearestPairs;
-                p.distToPatches = dist;
-                p.LR = LRpart;
-                p.HR = AssemblyHRPatch(nearestPairs, dist);
-                mPatches.push_back(p);
-            }
-            else
-            {
-                std::cout << i << " " << j << std::endl;
-            }
+            Patch p;
+            p.rect = cv::Rect(i, j, 3, 3);
+            p.patchNums = nearestPairs;
+            p.distToPatches = dist;
+            p.LR = LRpart;
+            p.HR = AssemblyHRPatch(nearestPairs, dist);
+            mPatches.push_back(p);
+            p.HR.copyTo(mHRImage(cv::Rect((i+1)*2-2, (j+1)*2-2, p.HR.cols, p.HR.rows)));
         }
     }
 
     return true;
 }
 
+
 void SISR::GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist)
 {
     nearest.clear();
     dist.clear();
+    QList<QPair<int, double>> tmp;
     for (int i = 0; i < mPairs.size(); ++i)
     {
-        double d = EuclidDist(part, mPairs[i].first);
-        if (d < 10.)
-        {
-            nearest.push_back(i);
-            dist.push_back(d);
-        }
+        double d = StandartDerivation(part, mPairs[i].first);
+        tmp.push_back(QPair<int,double>(i, d));
+    }
+    std::partial_sort(tmp.begin(), tmp.begin() + 8, tmp.end(), [](const QPair<int,double>& l, const QPair<int,double>& r)
+    { return l.second < r.second; });
+    for (int i = 0; i < 8; ++i)
+    {
+        nearest.push_back(tmp[i].first);
+        dist.push_back(tmp[i].second);
     }
 }
 

@@ -11,6 +11,7 @@
 #include <QList>
 #include <QMap>
 #include <QPair>
+#include <omp.h>
 
 #define MPair QPair<cv::Mat, cv::Mat>
 
@@ -36,6 +37,8 @@ public:
 
     int GetPatchesCount();
     Patch GetPatch(int i);
+
+    cv::Mat GetHRImage();
 
 private:
     void GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);

@@ -40,6 +40,12 @@ public:
 
     cv::Mat GetHRImage();
 
+    static double RMSE(const cv::Mat& image1, const cv::Mat& image2);
+    static double MaxDeviation(const cv::Mat& image1, const cv::Mat& image2);
+    static double PSNR(const cv::Mat& image1, const cv::Mat& image2);
+    static double SSIM(const cv::Mat& image1, const cv::Mat& image2);
+    static double Max(const cv::Mat& image);
+
 private:
     void GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
     double EuclidDist(const cv::Mat& i1, const cv::Mat& i2);

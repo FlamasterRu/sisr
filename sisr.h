@@ -23,7 +23,7 @@ struct Patch
     QList<double> distToPatches;
 };
 
-class SISR
+class SISR  // 5, 61, 78
 {
 public:
     SISR();

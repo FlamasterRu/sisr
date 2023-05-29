@@ -38,8 +38,8 @@ void MainWindow::on_pushButtonFilePath_clicked()
 //    {
 //        return; // ничего не указали
 //    }
-    //QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
-    QString dirPath("D:/projects/other/HR");
+    QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    //QString dirPath("D:/projects/other/HR");
 
     // получение имён всех изображений
     QDir dir(dirPath);
@@ -104,11 +104,19 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
 
         // пятая вкладка, результаты сборки изображения
+        double rmse = SISR::RMSE(mHRImage1, s1.GetHRImage());
+        double maxDev = SISR::MaxDeviation(mHRImage1, s1.GetHRImage());
+        double psnr = SISR::PSNR(mHRImage1, s1.GetHRImage());
+        double ssim = SISR::SSIM(mHRImage1, s1.GetHRImage());
         ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
         ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
         ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
-        double sqDif = 0, maxDif = 0, ssim = 0;
-        double psnr = cv::PSNR(mHRImage1, s1.GetHRImage());
+        QString st = QString("Оценка результата:\n") +
+                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
+                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
+                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
+                QString("SSIM = ") + QString::number(ssim);
+        ui->labelResultStatistic->setText(st);
 
     }
 }
@@ -363,21 +371,6 @@ cv::Mat MainWindow::UpscalePartImageGrey(const cv::Mat& image, int scale)
         }
     }
     return res;
-}
-
-double MainWindow::SqDif(const cv::Mat& image1, const cv::Mat& image2)
-{
-    return 0;
-}
-
-double MainWindow::MaxDif(const cv::Mat& image1, const cv::Mat& image2)
-{
-    return 0;
-}
-
-double MainWindow::SSIM(const cv::Mat& image1, const cv::Mat& image2)
-{
-    return 0;
 }
 
 

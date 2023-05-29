@@ -89,7 +89,7 @@ bool SISR::AssemblyHRImage()
             p.HR.copyTo(mHRImage(cv::Rect((i+1)*2-2, (j+1)*2-2, p.HR.cols, p.HR.rows)));
         }
     }
-    cv::resize(mHRImage, mHRImage, cv::Size(mLRImage.cols, mLRImage.rows), cv::INTER_CUBIC);
+    cv::resize(mHRImage, mHRImage, cv::Size(mLRImage.cols*2, mLRImage.rows*2), cv::INTER_CUBIC);
     return true;
 }
 
@@ -104,9 +104,9 @@ void SISR::GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<do
         double d = StandartDerivation(part, mPairs[i].first);
         tmp.push_back(QPair<int,double>(i, d));
     }
-    std::partial_sort(tmp.begin(), tmp.begin() + 8, tmp.end(), [](const QPair<int,double>& l, const QPair<int,double>& r)
+    std::partial_sort(tmp.begin(), tmp.begin() + 4, tmp.end(), [](const QPair<int,double>& l, const QPair<int,double>& r)
     { return l.second < r.second; });
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         nearest.push_back(tmp[i].first);
         dist.push_back(tmp[i].second);
@@ -128,44 +128,22 @@ double SISR::EuclidDist(const cv::Mat& i1, const cv::Mat& i2)
 
 double SISR::StandartDerivation(const cv::Mat& i1, const cv::Mat& i2)
 {
-    QList<double> dist; // расстояние по модулю между пикселями
+    double res = 0.;
     for (int i = 0; i < i1.rows; ++i)
     {
         for (int j = 0; j < i2.cols; ++j)
         {
-            dist.push_back(std::abs(i1.at<uchar>(i,j) - i2.at<uchar>(i,j)));
+            double d = static_cast<double>(i1.at<uchar>(i,j)) - static_cast<double>(i2.at<uchar>(i,j));
+            res += d*d;
         }
     }
-    double aver = 0.;   // среднее арифметическое расстояний
-    for (int d : dist)
-    {
-        aver += d;
-    }
-    aver /= static_cast<double>(dist.size());
-
-    for (double& d : dist)  // квадраты отклонений расстояния от среднего
-    {
-        d = (d-aver)*(d-aver);
-    }
-    aver = 0.;
-    for (int d : dist)  // дисперсия
-    {
-        aver += d;
-    }
-    aver /= static_cast<double>(dist.size()-1);
-    return sqrt(aver);   // среднеквадратичное отклонение
+    return res/(i1.rows*i2.cols);
 }
 
 cv::Mat SISR::AssemblyHRPatch(QList<int> nearest, QList<double> weight)
 {
     cv::Mat result;
     mPairs[nearest.first()].second.copyTo(result);
-
-    double sum = 0.;
-    for (double w : weight)
-    {
-        sum += w;
-    }
 
     for (int i = 0; i < result.rows; ++i)
     {
@@ -174,9 +152,9 @@ cv::Mat SISR::AssemblyHRPatch(QList<int> nearest, QList<double> weight)
             double p = 0.;
             for (int k = 0; k < nearest.size(); ++k)
             {
-                double w = weight[k] / sum;
-                p += w * static_cast<double>( mPairs[nearest[k]].second.at<uchar>(i, j) );
+                p += static_cast<double>( mPairs[nearest[k]].second.at<uchar>(i, j) );
             }
+            p /= static_cast<double>(nearest.size());
             result.at<uchar>(i,j) = (uchar)p;
         }
     }

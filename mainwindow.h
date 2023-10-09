@@ -10,6 +10,7 @@
 #include <QDir>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QTime>
 
 
 

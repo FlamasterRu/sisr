@@ -80,7 +80,11 @@ void MainWindow::on_pushButtonCount_clicked()
 
         // третья вкладка (пары патчей)
         s1.InitImage(mLRImage1);
+        QTime t1, t2;
+        t1.restart();
+        t2.restart();
         s1.CreateLRHRPairs();
+        std::cout << "CreateLRHRPairs " << t1.restart()/1000. << std::endl;
 
         ui->label1PartCur->setVisible(true);
         ui->label1PartMax->setVisible(true);
@@ -92,7 +96,10 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->horizontalSlider1Part->setValue(0); // костыль, чтобы картинки обновились
 
         // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
+        t1.restart();
         s1.AssemblyHRImage();
+        std::cout << "AssemblyHRImage " << t1.restart()/1000. << std::endl;
+        std::cout << "All time " << t2.restart()/1000. << std::endl;
 
         ui->horizontalSliderHRAssemb->setVisible(true);
         ui->labelCurPatch->setVisible(true);

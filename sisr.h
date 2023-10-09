@@ -12,6 +12,7 @@
 #include <QMap>
 #include <QPair>
 #include <omp.h>
+#include <QTime>
 
 #define MPair QPair<cv::Mat, cv::Mat>
 
@@ -46,8 +47,10 @@ public:
     static double SSIM(const cv::Mat& image1, const cv::Mat& image2);
     static double Max(const cv::Mat& image);
 
+
 private:
     void GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
+    void GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
     double EuclidDist(const cv::Mat& i1, const cv::Mat& i2);
     double StandartDerivation(const cv::Mat& i1, const cv::Mat& i2);
     cv::Mat AssemblyHRPatch(QList<int> nearest, QList<double> weight);
@@ -56,6 +59,9 @@ private:
     cv::Mat mLRImage, mHRImage;
     QList<MPair> mPairs;
     QList<Patch> mPatches;
+    double sumT1, sumT2;
+
+    QHash<uint, QList<int>> mHash;
 };
 
 #endif // SISR_H

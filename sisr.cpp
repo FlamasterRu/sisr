@@ -49,7 +49,6 @@ cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает аппрок
 uint qHash(const cv::Mat& image)
 {
     cv::Mat cop(image);
-    //std::cout << cop << std::endl;
     while (cop.rows + cop.cols > 4)
     {
         cop = VaveletHaara(cop);
@@ -74,7 +73,7 @@ int SISR::GetPairsCount()
     return mPairs.size();
 }
 
-MPair SISR::GetPair(int i)
+PairImag SISR::GetPair(int i)
 {
     return mPairs.at(i);
 }
@@ -84,7 +83,7 @@ int SISR::GetPatchesCount()
     return mPatches.size();
 }
 
-Patch SISR::GetPatch(int i)
+LRAHRInfo SISR::GetPatch(int i)
 {
     return mPatches.at(i);
 }
@@ -99,110 +98,107 @@ cv::Mat SISR::GetHRImage()
 bool SISR::InitImage(const cv::Mat& image)
 {
     image.copyTo(mLRImage);
-
-    cv::Mat mat(3, 3, image.type());
-    mat.at<uchar>(0, 0) = 1;
-    mat.at<uchar>(0, 1) = 2;
-    mat.at<uchar>(0, 2) = 3;
-    mat.at<uchar>(1, 0) = 4;
-    mat.at<uchar>(1, 1) = 5;
-    mat.at<uchar>(1, 2) = 6;
-    mat.at<uchar>(2, 0) = 7;
-    mat.at<uchar>(2, 1) = 8;
-    mat.at<uchar>(2, 2) = 9;
-
-//    mat.at<uchar>(0, 0) = 1;
-//    mat.at<uchar>(0, 1) = 2;
-//    mat.at<uchar>(0, 2) = 3;
-//    mat.at<uchar>(0, 3) = 4;
-//    mat.at<uchar>(1, 0) = 5;
-//    mat.at<uchar>(1, 1) = 6;
-//    mat.at<uchar>(1, 2) = 7;
-//    mat.at<uchar>(1, 3) = 8;
-//    mat.at<uchar>(2, 0) = 9;
-//    mat.at<uchar>(2, 1) = 10;
-//    mat.at<uchar>(2, 2) = 11;
-//    mat.at<uchar>(2, 3) = 12;
-//    mat.at<uchar>(3, 0) = 13;
-//    mat.at<uchar>(3, 1) = 14;
-//    mat.at<uchar>(3, 2) = 15;
-//    mat.at<uchar>(3, 3) = 16;
-
-//    mat.at<uchar>(0, 0) = 1;
-//    mat.at<uchar>(0, 1) = 2;
-//    mat.at<uchar>(0, 2) = 3;
-//    mat.at<uchar>(0, 3) = 4;
-//    mat.at<uchar>(0, 4) = 5;
-//    mat.at<uchar>(1, 0) = 6;
-//    mat.at<uchar>(1, 1) = 7;
-//    mat.at<uchar>(1, 2) = 8;
-//    mat.at<uchar>(1, 3) = 9;
-//    mat.at<uchar>(1, 4) = 10;
-//    mat.at<uchar>(2, 0) = 11;
-//    mat.at<uchar>(2, 1) = 12;
-//    mat.at<uchar>(2, 2) = 13;
-//    mat.at<uchar>(2, 3) = 14;
-//    mat.at<uchar>(2, 4) = 15;
-//    mat.at<uchar>(3, 0) = 16;
-//    mat.at<uchar>(3, 1) = 17;
-//    mat.at<uchar>(3, 2) = 18;
-//    mat.at<uchar>(3, 3) = 19;
-//    mat.at<uchar>(3, 4) = 20;
-//    mat.at<uchar>(4, 0) = 21;
-//    mat.at<uchar>(4, 1) = 22;
-//    mat.at<uchar>(4, 2) = 23;
-//    mat.at<uchar>(4, 3) = 24;
-//    mat.at<uchar>(4, 4) = 25;
-
-
-
-    //std::cout << mat << std::endl;
-    //cv::Mat tmp = VaveletHaara(mat);
-    //std::cout << tmp << std::endl;
-    //std::cout << qHash(mat) << std::endl;
-
     return true;
 }
 
 bool SISR::CreateLRHRPairs()
 {
+    // Чтобы уменьшать размер внутри объекта
     cv::Mat curImage;
     mLRImage.copyTo(curImage);
 
-    uint maxSize = ((uint)curImage.rows - 8u)*((uint)curImage.cols - 8u);
-    std::cout << "Hash teor size = " << maxSize << std::endl;
-    if (maxSize < 16u)
-        hashUnity = 128;
-    else if (maxSize < 256u)
-        hashUnity = 64;
-    else if (maxSize < 4096u)
-        hashUnity = 32;
-    else if (maxSize < 65536u)
-        hashUnity = 16;
-    else if (maxSize < 1048576u)
-        hashUnity = 8;
-    else if (maxSize < 16777216u)
-        hashUnity = 4;
-    else if (maxSize < 268435456u)
-        hashUnity = 2;
-    else
-        hashUnity = 1;
-    std::cout << "Hash unity = " << (uint)hashUnity << std::endl;
-
-    while (curImage.rows > 9 && curImage.cols > 9)  // ищем во всех разрешениях, с уменьшением в 0.9 раз
+    // Строит пары, пока изображение больше чем 9*9 пикселей
+    while (curImage.rows > 9 && curImage.cols > 9)
     {
         for (int i = 0; i < curImage.rows - 8; ++i)
         {
             for (int j = 0; j < curImage.cols - 8; ++j)
             {
+                // Фрагмент высокого разрешения
                 cv::Mat HR(curImage, cv::Rect(i, j, 9, 9));
+
+                // Фрагмент низкого разрешения
                 cv::Mat LR;
                 cv::resize(HR, LR, cv::Size(3, 3), cv::INTER_NEAREST);
-                mPairs.push_back(MPair(LR, HR));
-                mHash[qHash(LR)].push_back(mPairs.size()-1);    // хэш по LR патчу хранит номер пары в списке пар
+                mPairs.push_back(PairImag(LR, HR));
+
+                // Зеркально отображены
+                cv::Mat HRZ;
+                cv::flip(HR, HRZ, 1);
+                cv::Mat LRZ;
+                cv::resize(HRZ, LRZ, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LRZ, HRZ));
+
+                // Поворот на 90 градусов
+                cv::Mat HR90;
+                cv::rotate(HR, HR90, cv::ROTATE_90_CLOCKWISE);
+                cv::Mat LR90;
+                cv::resize(HR90, LR90, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LR90, HR90));
+
+                // Поворот на 90 и зеркально
+                cv::Mat HRZ90;
+                cv::flip(HR90, HRZ90, 1);
+                cv::Mat LRZ90;
+                cv::resize(HRZ90, LRZ90, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LRZ90, HRZ90));
+
+                // Поворот на 180 градусов
+                cv::Mat HR180;
+                cv::rotate(HR, HR180, cv::ROTATE_180);
+                cv::Mat LR180;
+                cv::resize(HR180, LR180, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LR180, HR180));
+
+                // Поворот на 180 и зеркально
+                cv::Mat HRZ180;
+                cv::flip(HR180, HRZ180, 1);
+                cv::Mat LRZ180;
+                cv::resize(HRZ180, LRZ180, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LRZ180, HRZ180));
+
+                // Поворот на 270 градусов
+                cv::Mat HR270;
+                cv::rotate(HR, HR270, cv::ROTATE_90_COUNTERCLOCKWISE);
+                cv::Mat LR270;
+                cv::resize(HR270, LR270, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LR270, HR270));
+
+                // Поворот на 270 и зеркально
+                cv::Mat HRZ270;
+                cv::flip(HR270, HRZ270, 1);
+                cv::Mat LRZ270;
+                cv::resize(HRZ270, LRZ270, cv::Size(3, 3), cv::INTER_NEAREST);
+                mPairs.push_back(PairImag(LRZ270, HRZ270));
             }
         }
         cv::resize(curImage, curImage, cv::Size(curImage.rows*0.95, curImage.cols*0.95), cv::INTER_NEAREST);
+    }
+
+    std::cout << "Hash teor size = " << mPairs.size() << std::endl;
+    if (mPairs.size() < 16)
+        hashUnity = 128;
+    else if (mPairs.size() < 256)
+        hashUnity = 128;
+    else if (mPairs.size() < 4096)
+        hashUnity = 64;
+    else if (mPairs.size() < 65536)
+        hashUnity = 32;
+    else if (mPairs.size() < 1048576)
+        hashUnity = 16;
+    else if (mPairs.size() < 16777216)
+        hashUnity = 16;
+    else if (mPairs.size() < 268435456)
+        hashUnity = 8;
+    else
+        hashUnity = 4;
+    hashUnity = 16;
+    std::cout << "Hash unity = " << (uint)hashUnity << std::endl;
+
+    for (int i = 0; i < mPairs.size(); ++i)
+    {
+        const PairImag& p = mPairs[i];
+        mHash[qHash(p.first)].push_back(i);
     }
 
     return true;
@@ -212,6 +208,7 @@ bool SISR::AssemblyHRImage()
 {
     QList<int> nearestPairs;
     QList<double> dist;
+    // Заполнение серым для контраста результата.
     mHRImage.create(mLRImage.rows*2 + 3, mLRImage.cols*2 + 3, CV_8UC1);
     for (int i = 0; i < mHRImage.rows; ++i)
     {
@@ -220,23 +217,27 @@ bool SISR::AssemblyHRImage()
             mHRImage.at<uchar>(i,j) = 240;
         }
     }
+
     sumT1 = 0;
     sumT2 = 0;
+
     for (int i = 0; i < mLRImage.rows - 2; ++i)
     {
-        //std::cout << i << "/" << mLRImage.rows - 2 << std::endl;
         for (int j = 0; j < mLRImage.cols - 2; ++j)
         {
             cv::Mat LRpart(mLRImage, cv::Rect(i, j, 3, 3));
-            //GetNearestPairsIDS(LRpart, nearestPairs, dist);
             GetNearestPairsIDS2(LRpart, nearestPairs, dist);
-            Patch p;
+
+            // Построение фрагмента высокого разрешения.
+            LRAHRInfo p;
             p.rect = cv::Rect(i, j, 3, 3);
             p.patchNums = nearestPairs;
             p.distToPatches = dist;
             p.LR = LRpart;
             p.HR = AssemblyHRPatch(nearestPairs, dist);
             mPatches.push_back(p);
+
+            // Вставка фрагмента в итоговое изображение.
             p.HR.copyTo(mHRImage(cv::Rect((i+1)*2-2, (j+1)*2-2, p.HR.cols, p.HR.rows)));
         }
     }
@@ -259,6 +260,7 @@ void SISR::GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<do
         double d = StandartDerivation(part, mPairs[i].first);
         tmp.push_back(QPair<int,double>(i, d));
     }
+    // Сортировка первых четырёх пар по расстоянию.
     std::partial_sort(tmp.begin(), tmp.begin() + 4, tmp.end(), [](const QPair<int,double>& l, const QPair<int,double>& r)
     { return l.second < r.second; });
     for (int i = 0; i < 4; ++i)
@@ -278,7 +280,6 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
         nearest.clear();
         dist.clear();
         QList<QPair<int, double>> tmp;
-        //std::cout << qHash(part) << " " << mHash[qHash(part)].size() << std::endl;
         for (uint idx : mHash[qHash(part)])
         {
             double d = StandartDerivation(part, mPairs[idx].first);
@@ -305,7 +306,6 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
     }
     else
     {
-        //std::cout << "NOPE " << qHash(part) << std::endl;;
         GetNearestPairsIDS(part, nearest, dist);
     }
     sumT1 += t.restart();

@@ -160,7 +160,7 @@ void MainWindow::on_horizontalSlider1Part_valueChanged(int value)
     {
         return;
     }
-    MPair p = s1.GetPair(value);
+    PairImag p = s1.GetPair(value);
     ui->RLRPart->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.first, 50), QImage::Format_Grayscale8));
     ui->RHRPart->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(p.second, 20), QImage::Format_Grayscale8));
     ui->label1PartCur->setText(QString::number(value));
@@ -217,7 +217,7 @@ void MainWindow::on_horizontalSliderHRAssemb_valueChanged(int value)
     ui->AssembPartStatistic8->setText(QString());
 
 
-    Patch p = s1.GetPatch(value);
+    LRAHRInfo p = s1.GetPatch(value);
 
     cv::Mat tmp;
     mLRImage1.copyTo(tmp);
@@ -254,56 +254,56 @@ void MainWindow::on_horizontalSliderHRAssemb_valueChanged(int value)
 
     if (pairCount >= 1)
     {
-        MPair pr = s1.GetPair(p.patchNums[0]);
+        PairImag pr = s1.GetPair(p.patchNums[0]);
         ui->AssembPartLR1->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR1->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic1->setText(QString("Отклонение: ") + QString::number(p.distToPatches[0]));
     }
     if (pairCount >= 2)
     {
-        MPair pr = s1.GetPair(p.patchNums[1]);
+        PairImag pr = s1.GetPair(p.patchNums[1]);
         ui->AssembPartLR2->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR2->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic2->setText(QString("Отклонение: ") + QString::number(p.distToPatches[1]));
     }
     if (pairCount >= 3)
     {
-        MPair pr = s1.GetPair(p.patchNums[2]);
+        PairImag pr = s1.GetPair(p.patchNums[2]);
         ui->AssembPartLR3->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR3->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic3->setText(QString("Отклонение: ") + QString::number(p.distToPatches[2]));
     }
     if (pairCount >= 4)
     {
-        MPair pr = s1.GetPair(p.patchNums[3]);
+        PairImag pr = s1.GetPair(p.patchNums[3]);
         ui->AssembPartLR4->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR4->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic4->setText(QString("Отклонение: ") + QString::number(p.distToPatches[3]));
     }
     if (pairCount >= 5)
     {
-        MPair pr = s1.GetPair(p.patchNums[4]);
+        PairImag pr = s1.GetPair(p.patchNums[4]);
         ui->AssembPartLR5->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR5->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic5->setText(QString("Отклонение: ") + QString::number(p.distToPatches[4]));
     }
     if (pairCount >= 6)
     {
-        MPair pr = s1.GetPair(p.patchNums[5]);
+        PairImag pr = s1.GetPair(p.patchNums[5]);
         ui->AssembPartLR6->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR6->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic6->setText(QString("Отклонение: ") + QString::number(p.distToPatches[5]));
     }
     if (pairCount >= 7)
     {
-        MPair pr = s1.GetPair(p.patchNums[6]);
+        PairImag pr = s1.GetPair(p.patchNums[6]);
         ui->AssembPartLR7->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR7->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic7->setText(QString("Отклонение: ") + QString::number(p.distToPatches[6]));
     }
     if (pairCount >= 8)
     {
-        MPair pr = s1.GetPair(p.patchNums[7]);
+        PairImag pr = s1.GetPair(p.patchNums[7]);
         ui->AssembPartLR8->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.first, 15), QImage::Format_Grayscale8));
         ui->AssembPartHR8->setPixmap(PixmapFromCVMat(UpscalePartImageGrey(pr.second, 10), QImage::Format_Grayscale8));
         ui->AssembPartStatistic8->setText(QString("Отклонение: ") + QString::number(p.distToPatches[7]));

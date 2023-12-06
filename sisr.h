@@ -14,6 +14,9 @@
 #include <omp.h>
 #include <QTime>
 
+#define C1 (float) (0.01 * 255 * 0.01  * 255)
+#define C2 (float) (0.03 * 255 * 0.03  * 255)
+
 typedef QPair<cv::Mat, cv::Mat> PairImag;
 
 // LR - фрагмент исходного изображения низкого разрешения
@@ -57,10 +60,27 @@ public:
     /// \brief Возвращает изображение высокого разрешения.
     cv::Mat GetHRImage();
 
+    /// \brief Среднее арифметическое по пикселям.
+    static double Avg(const cv::Mat& m);
+    /// \brief Среднеквадратичное отклонение от Avg
+    static double Sigma(const cv::Mat& m);
+    /// \brief Ковариация
+    static double Cov(const cv::Mat& m1, const cv::Mat& m2);
+    /// \brief Евклидово расстояние (корень от сумму квадратов расстояний между пикселями). Чем меньше - тем сильнее похожи.
+    static double EuclidDist(const cv::Mat& i1, const cv::Mat& i2);
+    /// \brief Среднее из квадратов отклонений между пикселями. Чем меньше - тем сильнее похожи.
+    static double StandartDerivation(const cv::Mat& i1, const cv::Mat& i2);
+    /// \brief Среднеквадратичное отклонение (корень из стандартного отклонения). Чем меньше - тем сильнее похожи.
     static double RMSE(const cv::Mat& image1, const cv::Mat& image2);
+    /// \brief Максимальное отклонение пикселя (модуль). Чем меньше - тем сильнее похожи.
     static double MaxDeviation(const cv::Mat& image1, const cv::Mat& image2);
+    /// \brief Отношение среднеквадратичного отклонения к максимальному значению в пикселях. Наилучшее значение в интервале от 30 до 40 дБ.
     static double PSNR(const cv::Mat& image1, const cv::Mat& image2);
+    /// \brief Индекс структурного сходства (учитывает взаимосвязь соседних пикселей). Значение от -1, до 1. Чем ближе к 1 - тем сильнее похожи.
     static double SSIM(const cv::Mat& image1, const cv::Mat& image2);
+    /// \brief Структурные отличия (обратное к (1 - SSIM)/2). Значение от 0 до 1. Чем меньше - тем сильнее похожи.
+    static double DSSIM(const cv::Mat& image1, const cv::Mat& image2);
+    /// \brief Максимальное значение пикселя.
     static double Max(const cv::Mat& image);
 
 
@@ -68,11 +88,9 @@ private:
     // Поиск подходящих пар LR-HR для LR
     /// \brief Простой поиск по списку за О(n).
     void GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
-    ///\ brief Поиск в хэш таблице за О(n).
+    ///\ brief Поиск в хэш таблице за О(1).
     void GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
 
-    double EuclidDist(const cv::Mat& i1, const cv::Mat& i2);
-    double StandartDerivation(const cv::Mat& i1, const cv::Mat& i2);
     cv::Mat AssemblyHRPatch(QList<int> nearest, QList<double> weight);
 
 private:

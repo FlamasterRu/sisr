@@ -93,10 +93,31 @@ cv::Mat SISR::GetHRImage()
     return mHRImage;
 }
 
-
-
 bool SISR::InitImage(const cv::Mat& image)
 {
+//    cv::Mat i1(3, 3, CV_8UC1);
+//    i1.at<uchar>(0, 0) = 0;
+//    i1.at<uchar>(0, 1) = 0;
+//    i1.at<uchar>(0, 2) = 0;
+//    i1.at<uchar>(1, 0) = 0;
+//    i1.at<uchar>(1, 1) = 0;
+//    i1.at<uchar>(1, 2) = 0;
+//    i1.at<uchar>(2, 0) = 0;
+//    i1.at<uchar>(2, 1) = 0;
+//    i1.at<uchar>(2, 2) = 0;
+
+//    cv::Mat i2(3, 3, CV_8UC1);
+//    i2.at<uchar>(0, 0) = 255;
+//    i2.at<uchar>(0, 1) = 255;
+//    i2.at<uchar>(0, 2) = 255;
+//    i2.at<uchar>(1, 0) = 255;
+//    i2.at<uchar>(1, 1) = 255;
+//    i2.at<uchar>(1, 2) = 255;
+//    i2.at<uchar>(2, 0) = 255;
+//    i2.at<uchar>(2, 1) = 255;
+//    i2.at<uchar>(2, 2) = 255;
+//    std::cout << SSIM(i1, i2) << std::endl;
+
     image.copyTo(mLRImage);
     return true;
 }
@@ -282,7 +303,7 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
         QList<QPair<int, double>> tmp;
         for (uint idx : mHash[qHash(part)])
         {
-            double d = StandartDerivation(part, mPairs[idx].first);
+            double d = DSSIM(part, mPairs[idx].first);
             tmp.push_back(QPair<int,double>(idx, d));
         }
         if (tmp.size() >= 4)
@@ -311,32 +332,6 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
     sumT1 += t.restart();
 }
 
-double SISR::EuclidDist(const cv::Mat& i1, const cv::Mat& i2)
-{
-    double res = 0.;
-    for (int i = 0; i < i1.rows; ++i)
-    {
-        for (int j = 0; j < i2.cols; ++j)
-        {
-            res += (i1.at<uchar>(i,j) - i2.at<uchar>(i,j))*(i1.at<uchar>(i,j) - i2.at<uchar>(i,j));
-        }
-    }
-    return std::sqrt(res);
-}
-
-double SISR::StandartDerivation(const cv::Mat& i1, const cv::Mat& i2)
-{
-    double res = 0.;
-    for (int i = 0; i < i1.rows; ++i)
-    {
-        for (int j = 0; j < i2.cols; ++j)
-        {
-            double d = static_cast<double>(i1.at<uchar>(i,j)) - static_cast<double>(i2.at<uchar>(i,j));
-            res += d*d;
-        }
-    }
-    return res/(i1.rows*i2.cols);
-}
 
 cv::Mat SISR::AssemblyHRPatch(QList<int> nearest, QList<double> weight)
 {
@@ -362,23 +357,81 @@ cv::Mat SISR::AssemblyHRPatch(QList<int> nearest, QList<double> weight)
     return result;
 }
 
+double SISR::Avg(const cv::Mat& m)
+{
+    double res = 0.;
+    for (int i = 0; i < m.rows; ++i)
+    {
+        for (int j = 0; j < m.cols; ++j)
+        {
+            res += m.at<uchar>(i,j);
+        }
+    }
+    return res/static_cast<double>(m.rows*m.cols);
+}
 
+double SISR::Sigma(const cv::Mat& m)
+{
+    double mu = Avg(m);
+    double res = 0;
+    for (int i = 0; i < m.rows; ++i)
+    {
+        for (int j = 0; j < m.cols; ++j)
+        {
+            double v = m.at<uchar>(i,j);
+            res += std::abs( (v-mu)*(v-mu) );
+        }
+    }
+    return res / static_cast<double>(m.rows*m.cols);
+}
 
+double SISR::Cov(const cv::Mat& m1, const cv::Mat& m2)
+{
+    double res = 0;
+    double mu1 = Avg(m1);
+    double mu2 = Avg(m2);
+    for (int i = 0; i < m1.rows; ++i)
+    {
+        for (int j = 0; j < m1.cols; ++j)
+        {
+            double v1 = m1.at<uchar>(i,j);
+            double v2 = m2.at<uchar>(i,j);
+            res += (v1 - mu1)*(v2 - mu2);
+        }
+    }
+    return res / static_cast<double>(m1.rows*m1.cols);
+}
+
+double SISR::EuclidDist(const cv::Mat& i1, const cv::Mat& i2)
+{
+    double res = 0.;
+    for (int i = 0; i < i1.rows; ++i)
+    {
+        for (int j = 0; j < i2.cols; ++j)
+        {
+            res += (i1.at<uchar>(i,j) - i2.at<uchar>(i,j))*(i1.at<uchar>(i,j) - i2.at<uchar>(i,j));
+        }
+    }
+    return std::sqrt(res);
+}
+
+double SISR::StandartDerivation(const cv::Mat& i1, const cv::Mat& i2)
+{
+    double res = 0.;
+    for (int i = 0; i < i1.rows; ++i)
+    {
+        for (int j = 0; j < i2.cols; ++j)
+        {
+            double d = static_cast<double>(i1.at<uchar>(i,j)) - static_cast<double>(i2.at<uchar>(i,j));
+            res += d*d;
+        }
+    }
+    return res/static_cast<double>(i1.rows*i2.cols);
+}
 
 double SISR::RMSE(const cv::Mat& image1, const cv::Mat& image2)
 {
-    double res = 0.;
-    for (int i = 0; i < image1.rows; ++i)
-    {
-        for (int j = 0; j < image1.cols; ++j)
-        {
-            double v1 = image1.at<uchar>(i,j);
-            double v2 = image2.at<uchar>(i,j);
-            res += (v1-v2)*(v1-v2);
-        }
-    }
-    res /= static_cast<double>(image1.rows*image1.cols);
-    return sqrt(res);
+    return std::sqrt( StandartDerivation(image1, image2) );
 }
 
 double SISR::MaxDeviation(const cv::Mat& image1, const cv::Mat& image2)
@@ -409,48 +462,17 @@ double SISR::PSNR(const cv::Mat& image1, const cv::Mat& image2)
 
 double SISR::SSIM(const cv::Mat& image1, const cv::Mat& image2)
 {
-    double ave1 = 0, ave2 = 0;
-    for (int i = 0; i < image1.rows; ++i)
-    {
-        for (int j = 0; j < image1.cols; ++j)
-        {
-            ave1 += static_cast<double>(image1.at<uchar>(i,j));
-            ave2 += static_cast<double>(image2.at<uchar>(i,j));
-        }
-    }
-    ave1 /= static_cast<double>(image1.rows*image1.cols);
-    ave2 /= static_cast<double>(image2.rows*image2.cols);
+    double mu1 = Avg(image1);
+    double mu2 = Avg(image2);
+    double sigma1 = Sigma(image1);
+    double sigma2 = Sigma(image2);
+    double cov = Cov(image1, image2);
+    return (2.*mu1*mu2 + C1)*(2.*cov + C2) / ( (mu1*mu1 + mu2*mu2 + C1)*(sigma1*sigma1 + sigma2*sigma2 + C2) );
+}
 
-    double sco1 = 0, sco2 = 0;
-    for (int i = 0; i < image1.rows; ++i)
-    {
-        for (int j = 0; j < image1.cols; ++j)
-        {
-            double v1 = ave1 - static_cast<double>(image1.at<uchar>(i,j));
-            double v2 = ave2 - static_cast<double>(image2.at<uchar>(i,j));
-            sco1 += (ave1 - v1)*(ave1 - v1);
-            sco2 += (ave2 - v2)*(ave2 - v2);
-        }
-    }
-    sco1 /= static_cast<double>(image1.rows*image1.cols);
-    sco2 /= static_cast<double>(image2.rows*image2.cols);
-
-    double cov = 0;
-    for (int i = 0; i < image1.rows; ++i)
-    {
-        for (int j = 0; j < image1.cols; ++j)
-        {
-            double v1 = static_cast<double>(image1.at<uchar>(i,j));
-            double v2 = static_cast<double>(image2.at<uchar>(i,j));
-            cov += (v1 - ave1)*(v2 - ave2);
-        }
-    }
-    cov /= static_cast<double>(image1.rows*image1.cols);
-
-    double c1 = 0.01*255*0.01*255;
-    double c2 = 0.03*0.03*255*255;
-    return (2.*ave1*ave2 + c1)*(2.*cov + c2) /
-            ( (ave1*ave1 + ave2*ave2 + c1)*(sco1*sco1 + sco2*sco2 + c2) );
+double SISR::DSSIM(const cv::Mat& image1, const cv::Mat& image2)
+{
+    return (1. - SSIM(image1, image2))/2.;
 }
 
 double SISR::Max(const cv::Mat& image)
@@ -469,3 +491,4 @@ double SISR::Max(const cv::Mat& image)
     }
     return res;
 }
+

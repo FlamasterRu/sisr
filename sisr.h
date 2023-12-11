@@ -88,10 +88,11 @@ private:
     // Поиск подходящих пар LR-HR для LR
     /// \brief Простой поиск по списку за О(n).
     void GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
-    ///\ brief Поиск в хэш таблице за О(1).
+    /// \ brief Поиск в хэш таблице за О(1).
     void GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<double>& dist);
 
-    cv::Mat AssemblyHRPatch(QList<int> nearest, QList<double> weight);
+    /// \brief Сборка одного патча высокого разрешения из нескольких подходящих.
+    cv::Mat AssemblyHRPatch(QList<int> nearest);
 
 private:
     /// \brief Изображения низкого и увеличенного разрешения

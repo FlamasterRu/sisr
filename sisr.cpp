@@ -242,9 +242,9 @@ bool SISR::AssemblyHRImage()
     sumT1 = 0;
     sumT2 = 0;
 
-    for (int i = 0; i < mLRImage.rows - 2; ++i)
+    for (int i = 0; i < mLRImage.rows - 2; i += 1)
     {
-        for (int j = 0; j < mLRImage.cols - 2; ++j)
+        for (int j = 0; j < mLRImage.cols - 2; j += 1)
         {
             cv::Mat LRpart(mLRImage, cv::Rect(i, j, 3, 3));
             GetNearestPairsIDS2(LRpart, nearestPairs, dist);
@@ -255,7 +255,7 @@ bool SISR::AssemblyHRImage()
             p.patchNums = nearestPairs;
             p.distToPatches = dist;
             p.LR = LRpart;
-            p.HR = AssemblyHRPatch(nearestPairs, dist);
+            p.HR = AssemblyHRPatch(nearestPairs);
             mPatches.push_back(p);
 
             // Вставка фрагмента в итоговое изображение.
@@ -303,7 +303,7 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
         QList<QPair<int, double>> tmp;
         for (uint idx : mHash[qHash(part)])
         {
-            double d = DSSIM(part, mPairs[idx].first);
+            double d = EuclidDist(part, mPairs[idx].first);
             tmp.push_back(QPair<int,double>(idx, d));
         }
         if (tmp.size() >= 4)
@@ -333,7 +333,7 @@ void SISR::GetNearestPairsIDS2(const cv::Mat& part, QList<int>& nearest, QList<d
 }
 
 
-cv::Mat SISR::AssemblyHRPatch(QList<int> nearest, QList<double> weight)
+cv::Mat SISR::AssemblyHRPatch(QList<int> nearest)
 {
     QTime t;
     t.restart();

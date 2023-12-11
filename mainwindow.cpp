@@ -38,8 +38,8 @@ void MainWindow::on_pushButtonFilePath_clicked()
 //    {
 //        return; // ничего не указали
 //    }
-    QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
-    //QString dirPath("D:/projects/other/HR");
+    //QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    QString dirPath("D:/projects/other/HR");
 
     // получение имён всех изображений
     QDir dir(dirPath);

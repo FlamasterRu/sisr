@@ -49,7 +49,7 @@ cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает аппрок
 uint qHash(const cv::Mat& image)
 {
     cv::Mat cop(image);
-    while (cop.rows + cop.cols > 4)
+    while (cop.rows * cop.cols > 4)
     {
         cop = VaveletHaara(cop);
     }
@@ -136,7 +136,7 @@ bool SISR::CreateLRHRPairs()
             for (int j = 0; j < curImage.cols - 8; ++j)
             {
                 // Фрагмент высокого разрешения
-                cv::Mat HR(curImage, cv::Rect(i, j, 9, 9));
+                cv::Mat HR(curImage, cv::Rect(j, i, 6, 6));
 
                 // Фрагмент низкого разрешения
                 cv::Mat LR;
@@ -230,12 +230,12 @@ bool SISR::AssemblyHRImage()
     QList<int> nearestPairs;
     QList<double> dist;
     // Заполнение серым для контраста результата.
-    mHRImage.create(mLRImage.rows*2 + 3, mLRImage.cols*2 + 3, CV_8UC1);
+    mHRImage.create(mLRImage.rows*2, mLRImage.cols*2, CV_8UC1);
     for (int i = 0; i < mHRImage.rows; ++i)
     {
         for (int j = 0; j < mHRImage.cols; ++j)
         {
-            mHRImage.at<uchar>(i,j) = 240;
+            mHRImage.at<uchar>(i,j) = 0;
         }
     }
 
@@ -246,20 +246,31 @@ bool SISR::AssemblyHRImage()
     {
         for (int j = 0; j < mLRImage.cols - 2; j += 1)
         {
-            cv::Mat LRpart(mLRImage, cv::Rect(i, j, 3, 3));
+            cv::Mat LRpart(mLRImage, cv::Rect(j, i, 3, 3));
             GetNearestPairsIDS2(LRpart, nearestPairs, dist);
 
             // Построение фрагмента высокого разрешения.
             LRAHRInfo p;
-            p.rect = cv::Rect(i, j, 3, 3);
+            p.rect = cv::Rect(j, i, 3, 3);
             p.patchNums = nearestPairs;
             p.distToPatches = dist;
             p.LR = LRpart;
             p.HR = AssemblyHRPatch(nearestPairs);
             mPatches.push_back(p);
 
-            // Вставка фрагмента в итоговое изображение.
-            p.HR.copyTo(mHRImage(cv::Rect((i+1)*2-2, (j+1)*2-2, p.HR.cols, p.HR.rows)));
+            for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
+            {
+                for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
+                {
+                    int hv = mHRImage.at<uchar>(ih, jh);
+                    int pv = p.HR.at<uchar>(ip, jp);
+                    if (hv == 0)
+                        mHRImage.at<uchar>(ih, jh) = (uchar)pv;
+                    else
+                        mHRImage.at<uchar>(ih, jh) = (hv + pv) / 2;
+                }
+            }
+
         }
     }
     cv::resize(mHRImage, mHRImage, cv::Size(mLRImage.cols*2, mLRImage.rows*2), cv::INTER_CUBIC);

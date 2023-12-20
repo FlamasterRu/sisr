@@ -3,7 +3,7 @@
 uchar hashUnity = 1;
 
 
-cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает аппроксимированную часть изображение из дискретного вейвлет преобразования Хаара
+cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает основную часть изображения из дискретного вейвлет преобразования Хаара
 {
     if (image.rows != image.cols)
         throw("image.rows != image.cols");

@@ -20,7 +20,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->comboBoxImageType->setVisible(false);
     ui->comboBoxImageType->clear();
-    ui->comboBoxImageType->addItems(QStringList() << QString("Grey"));
+    ui->comboBoxImageType->addItems(QStringList() << QString("Grey") << QString("HSV_V") << QString("Haar_lin") << QString("Haar_cub")
+                                    << QString("Haar_SISR"));
+    ui->comboBoxImageType->setCurrentIndex(2);
 
     DefaultTab();
 }
@@ -38,8 +40,8 @@ void MainWindow::on_pushButtonFilePath_clicked()
 //    {
 //        return; // ничего не указали
 //    }
-    //QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
-    QString dirPath("D:/projects/other/HR");
+    QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    //QString dirPath("D:/projects/other/HR");
 
     // получение имён всех изображений
     QDir dir(dirPath);
@@ -70,6 +72,7 @@ void MainWindow::on_pushButtonFilePath_clicked()
 void MainWindow::on_pushButtonCount_clicked()
 {
     DefaultTab();
+    // Повышение разрешения чёрно-белого изображение, которое изначально rgb
     if (ui->comboBoxImageType->currentText() == QString("Grey"))
     {
         // вторая вкладка (исходное изображение)
@@ -124,6 +127,106 @@ void MainWindow::on_pushButtonCount_clicked()
                 QString("PSNR = ") + QString::number(psnr) + QString("\n") +
                 QString("SSIM = ") + QString::number(ssim);
         ui->labelResultStatistic->setText(st);
+
+    }
+    // Повышение разрешения цветового изображения в палитре HSV. V повышается через sisr. Остальные кубическая.
+    else if (ui->comboBoxImageType->currentText() == QString("HSV_V"))
+    {
+        // Создаём начальное изображение в HSV
+        cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2HSV);
+
+        cv::Mat lrH(mLRImage1.rows, mLRImage1.cols, CV_8UC1), lrS(mLRImage1.rows, mLRImage1.cols, CV_8UC1), lrV(mLRImage1.rows, mLRImage1.cols, CV_8UC1);
+        for (int i = 0; i < lrH.rows; ++i)
+        {
+            for (int j = 0; j < lrH.cols; ++j)
+            {
+                lrH.at<uchar>(i, j) = mLRImage1.at<cv::Vec3b>(i, j)[0];
+                lrS.at<uchar>(i, j) = mLRImage1.at<cv::Vec3b>(i, j)[1];
+                lrV.at<uchar>(i, j) = mLRImage1.at<cv::Vec3b>(i, j)[2];
+            }
+        }
+
+        // вторая вкладка (исходное изображение)
+        ui->Image2->setPixmap(PixmapFromCVMat(lrV, QImage::Format_Grayscale8));
+
+        // третья вкладка (пары патчей)
+        s1.InitImage(lrV);
+        QTime t1, t2;
+        t1.restart();
+        t2.restart();
+        s1.CreateLRHRPairs();
+        std::cout << "CreateLRHRPairs " << t1.restart()/1000. << std::endl;
+
+        ui->label1PartCur->setVisible(true);
+        ui->label1PartMax->setVisible(true);
+        ui->horizontalSlider1Part->setVisible(true);
+        ui->label1PartCur->setText(0);
+        ui->label1PartMax->setText(QString::number(s1.GetPairsCount()-1));
+        ui->horizontalSlider1Part->setMaximum(s1.GetPairsCount()-1);
+        ui->horizontalSlider1Part->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSlider1Part->setValue(0); // костыль, чтобы картинки обновились
+
+        // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
+        t1.restart();
+        s1.AssemblyHRImage();
+        std::cout << "AssemblyHRImage " << t1.restart()/1000. << std::endl;
+        std::cout << "All time " << t2.restart()/1000. << std::endl;
+
+        ui->horizontalSliderHRAssemb->setVisible(true);
+        ui->labelCurPatch->setVisible(true);
+        ui->labelPatchCount->setVisible(true);
+        ui->labelCurPatch->setText(0);
+        ui->labelPatchCount->setText(QString::number(s1.GetPatchesCount()-1));
+        ui->horizontalSliderHRAssemb->setMaximum(s1.GetPatchesCount()-1);
+        ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
+
+        // пятая вкладка, результаты сборки изображения
+        cv::Mat vRes = s1.GetHRImage();
+        cv::Mat hRes, sRes;
+        cv::resize(lrH, hRes, cv::Size(mStartImage.rows, mStartImage.cols), cv::INTER_CUBIC);
+        cv::resize(lrS, sRes, cv::Size(mStartImage.rows, mStartImage.cols), cv::INTER_CUBIC);
+        cv::Mat resHSV(vRes.rows, vRes.cols, CV_8UC3);
+        for (int i = 0; i < mStartImage.rows; ++i)
+        {
+            for (int j = 0; j < mStartImage.cols; ++j)
+            {
+                cv::Vec3b v(hRes.at<uchar>(i, j), sRes.at<uchar>(i, j), vRes.at<uchar>(i, j));
+                resHSV.at<cv::Vec3b>(i, j) = v;
+            }
+        }
+        cv::Mat resRGB;
+        cv::cvtColor(resHSV, resRGB, cv::COLOR_HSV2RGB);
+        double rmse = SISR::RMSE(mStartImage, resHSV);
+        double maxDev = SISR::MaxDeviation(mStartImage, resHSV);
+        double psnr = SISR::PSNR(mStartImage, resHSV);
+        double ssim = SISR::SSIM(mStartImage, resHSV);
+        ui->Result1->setPixmap(PixmapFromCVMat(mStartImage, QImage::Format_RGB888));
+        ui->Result2->setPixmap(PixmapFromCVMat(resRGB, QImage::Format_RGB888));
+        QString st = QString("Оценка результата:\n") +
+                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
+                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
+                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
+                QString("SSIM = ") + QString::number(ssim);
+        ui->labelResultStatistic->setText(st);
+    }
+    // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из линейной интерполяции разложения хаара начальной картинки.
+    else if (ui->comboBoxImageType->currentText() == QString("Haar_lin"))
+    {
+        // вторая вкладка (исходное изображение)
+        cv::cvtColor(mStartImage, mHRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image2->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+    }
+    // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из бикубической интерполяции разложения хаара начальной картинки.
+    else if (ui->comboBoxImageType->currentText() == QString("Haar_cub"))
+    {
+
+    }
+    // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из повышения sisr разложения хаара начальной картинки.
+    else if (ui->comboBoxImageType->currentText() == QString("Haar_SISR"))
+    {
 
     }
 }

@@ -2,8 +2,7 @@
 
 uchar hashUnity = 1;
 
-
-cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает основную часть изображения из дискретного вейвлет преобразования Хаара
+cv::Mat VaveletHaaraMain(const cv::Mat& image)
 {
     if (image.rows != image.cols)
         throw("image.rows != image.cols");
@@ -46,12 +45,75 @@ cv::Mat VaveletHaara(const cv::Mat& image)  // Возвращает основн
     return res2;
 }
 
+cv::Mat VaveletHaara(const cv::Mat& image)
+{
+    if (image.rows != image.cols)
+        throw("image.rows != image.cols");
+
+    cv::Mat res1(image.rows, image.cols, CV_8SC1);
+    for (int i = 0; i < image.rows; ++i)
+    {
+        for (int j = 0; j < image.cols/2; ++j)
+        {
+            int v1 = image.at<uchar>(i, 2*j);
+            int v2 = image.at<uchar>(i, 2*j+1);
+            res1.at<char>(i, j) = (v1 + v2) / 2;
+            res1.at<char>(i, image.cols/2 + j) = (v1 - v2) / 2;
+        }
+    }
+
+    cv::Mat res2(image.rows, image.cols, CV_8SC1);
+    for (int i = 0; i < image.rows/2; ++i)
+    {
+        for (int j = 0; j < image.cols; ++j)
+        {
+            int v1 = res1.at<char>(2*i, j);
+            int v2 = res1.at<char>(2*i+1, j);
+            res2.at<char>(i, j) = (v1 + v2) / 2;
+            res2.at<char>(image.rows/2 + i, j) = (v1 - v2) / 2;
+        }
+    }
+    return res2;
+}
+
+cv::Mat ReVaveletHaara(const cv::Mat& image)
+{
+    if (image.rows != image.cols)
+        throw("image.rows != image.cols");
+
+    cv::Mat res1(image.rows, image.cols, CV_8SC1);
+    for (int i = 0; i < image.rows/2; ++i)
+    {
+        for (int j = 0; j < image.cols; ++j)
+        {
+            double v1 = image.at<char>(i, j);
+            double v2 = image.at<char>(image.rows/2 + i, j);
+            res1.at<char>(2*i, j) = (v1 - v2) * 2;
+            res1.at<char>(2*i + 1, j) = (v1 + v2) * 2;
+        }
+    }
+
+    cv::Mat res2(image.rows, image.cols, CV_8UC1);
+    for (int i = 0; i < image.rows; ++i)
+    {
+        for (int j = 0; j < image.cols/2; ++j)
+        {
+            double v1 = res1.at<char>(i, j);
+            double v2 = res1.at<char>(i, image.cols/2 + j);
+            res2.at<uchar>(i, 2*j) = (v1 - v2) * 2;
+            res2.at<uchar>(i, 2*j + 1) = (v1 + v2) * 2;
+        }
+    }
+
+    return res2;
+}
+
 uint qHash(const cv::Mat& image)
 {
     cv::Mat cop(image);
     while (cop.rows * cop.cols > 4)
     {
-        cop = VaveletHaara(cop);
+        cop = VaveletHaaraMain(cop);
     }
     uchar data[4];
     data[0] = cop.at<uchar>(0, 0)/hashUnity;

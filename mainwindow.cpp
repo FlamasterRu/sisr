@@ -218,6 +218,64 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->Image1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
         cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2GRAY);
         ui->Image2->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+
+//        cv::Mat i1(4, 4, CV_8UC1);
+//        i1.at<uchar>(0, 0) = 1;
+//        i1.at<uchar>(0, 1) = 2;
+//        i1.at<uchar>(0, 2) = 3;
+//        i1.at<uchar>(0, 3) = 4;
+//        i1.at<uchar>(1, 0) = 4;
+//        i1.at<uchar>(1, 1) = 8;
+//        i1.at<uchar>(1, 2) = 6;
+//        i1.at<uchar>(1, 3) = 7;
+//        i1.at<uchar>(2, 0) = 8;
+//        i1.at<uchar>(2, 1) = 9;
+//        i1.at<uchar>(2, 2) = 1;
+//        i1.at<uchar>(2, 3) = 2;
+//        i1.at<uchar>(3, 0) = 3;
+//        i1.at<uchar>(3, 1) = 4;
+//        i1.at<uchar>(3, 2) = 5;
+//        i1.at<uchar>(3, 3) = 6;
+
+//        std::cout << i1 << std::endl;
+//        cv::Mat lrHaar = VaveletHaara(i1);
+//        std::cout << lrHaar << std::endl;
+//        std::cout << ReVaveletHaara(lrHaar) << std::endl;
+
+        cv::Mat lrHaar = VaveletHaara(mLRImage1);
+        cv::Mat rowHaar(lrHaar, cv::Rect(0, lrHaar.rows/2, lrHaar.cols/2, lrHaar.rows/2));
+        cv::Mat colHaar(lrHaar, cv::Rect(lrHaar.cols/2, 0, lrHaar.cols/2, lrHaar.rows/2));
+
+        cv::resize(rowHaar, rowHaar, cv::Size(), 2, 2, cv::INTER_NEAREST);
+        cv::resize(colHaar, colHaar, cv::Size(), 2, 2, cv::INTER_NEAREST);
+
+        cv::Mat hrHaar(mStartImage.rows, mStartImage.cols, CV_8UC1);
+        for (int i = 0; i < hrHaar.rows; ++i)
+        {
+            for (int j = 0; j < hrHaar.cols; ++j)
+            {
+                hrHaar.at<uchar>(i, j) = 0;
+            }
+        }
+        mLRImage1.copyTo( hrHaar(cv::Rect(0, 0, hrHaar.cols/2, hrHaar.rows/2)) );
+        colHaar.copyTo( hrHaar(cv::Rect(hrHaar.cols/2, 0, hrHaar.cols/2, hrHaar.rows/2)) );
+        rowHaar.copyTo( hrHaar(cv::Rect(0, hrHaar.rows/2, hrHaar.cols/2, hrHaar.rows/2)) );
+
+        cv::Mat res = ReVaveletHaara(hrHaar);
+        // пятая вкладка, результаты сборки изображения
+        double rmse = SISR::RMSE(mHRImage1, res);
+        double maxDev = SISR::MaxDeviation(mHRImage1, res);
+        double psnr = SISR::PSNR(mHRImage1, res);
+        double ssim = SISR::SSIM(mHRImage1, res);
+        ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        ui->Result2->setPixmap(PixmapFromCVMat(res, QImage::Format_Grayscale8));
+        ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+        QString st = QString("Оценка результата:\n") +
+                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
+                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
+                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
+                QString("SSIM = ") + QString::number(ssim);
+        ui->labelResultStatistic->setText(st);
     }
     // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из бикубической интерполяции разложения хаара начальной картинки.
     else if (ui->comboBoxImageType->currentText() == QString("Haar_cub"))

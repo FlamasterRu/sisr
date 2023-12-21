@@ -14,6 +14,15 @@
 #include <omp.h>
 #include <QTime>
 
+/// \brief Возвращает основную часть изображения из дискретного вейвлет преобразования Хаара
+cv::Mat VaveletHaaraMain(const cv::Mat& image);
+
+/// \brief Возвращает всё дискретное вейвлет преобразование Хаара
+cv::Mat VaveletHaara(const cv::Mat& image);
+
+/// \brief Восстанавливает изображение по вейвлету Хаара
+cv::Mat ReVaveletHaara(const cv::Mat& image);
+
 #define C1 (float) (0.01 * 255 * 0.01  * 255)
 #define C2 (float) (0.03 * 255 * 0.03  * 255)
 

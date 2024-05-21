@@ -13,6 +13,8 @@
 #include <QPair>
 #include <omp.h>
 #include <QTime>
+#include <QFileInfo>
+#include <QDir>
 
 /// \brief Возвращает основную часть изображения из дискретного вейвлет преобразования Хаара
 cv::Mat VaveletHaaraMain(const cv::Mat& image);
@@ -50,11 +52,11 @@ public:
     /// \brief Задаёт начальное изображение низкого разрешения.
     bool InitImage(const cv::Mat& image);
 
-    /// \brief Строит список пар патчей и хэш таблицу для быстрого поиска.
-    bool CreateLRHRPairs();
+    /// \brief Строит список пары низкого и высокого разрешения и хэш таблицу для быстрого поиска. Если save сохраняет на файловую систему
+    bool CreateLRHRPairs(bool save = false);
 
     /// \brief Строит изображение высокого разрешения.
-    bool AssemblyHRImage();
+    bool AssemblyHRImage(bool save = false);
 
     /// \brief Возвращает размер списока пар фрагментов низкого и высокого разрешения из исходного изображения.
     int GetPairsCount();
@@ -103,6 +105,9 @@ private:
     /// \brief Сборка одного патча высокого разрешения из нескольких подходящих.
     cv::Mat AssemblyHRPatch(QList<int> nearest);
 
+public:
+    const int mLrPatchSize = 8;
+    const int mHrPatchSize = 16;
 private:
     /// \brief Изображения низкого и увеличенного разрешения
     cv::Mat mLRImage, mHRImage;

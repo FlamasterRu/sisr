@@ -157,105 +157,82 @@ cv::Mat SISR::GetHRImage()
 
 bool SISR::InitImage(const cv::Mat& image)
 {
-//    cv::Mat i1(3, 3, CV_8UC1);
-//    i1.at<uchar>(0, 0) = 0;
-//    i1.at<uchar>(0, 1) = 0;
-//    i1.at<uchar>(0, 2) = 0;
-//    i1.at<uchar>(1, 0) = 0;
-//    i1.at<uchar>(1, 1) = 0;
-//    i1.at<uchar>(1, 2) = 0;
-//    i1.at<uchar>(2, 0) = 0;
-//    i1.at<uchar>(2, 1) = 0;
-//    i1.at<uchar>(2, 2) = 0;
-
-//    cv::Mat i2(3, 3, CV_8UC1);
-//    i2.at<uchar>(0, 0) = 255;
-//    i2.at<uchar>(0, 1) = 255;
-//    i2.at<uchar>(0, 2) = 255;
-//    i2.at<uchar>(1, 0) = 255;
-//    i2.at<uchar>(1, 1) = 255;
-//    i2.at<uchar>(1, 2) = 255;
-//    i2.at<uchar>(2, 0) = 255;
-//    i2.at<uchar>(2, 1) = 255;
-//    i2.at<uchar>(2, 2) = 255;
-//    std::cout << SSIM(i1, i2) << std::endl;
-
     image.copyTo(mLRImage);
     return true;
 }
 
-bool SISR::CreateLRHRPairs()
+bool SISR::CreateLRHRPairs(bool save)
 {
     // Чтобы уменьшать размер внутри объекта
     cv::Mat curImage;
     mLRImage.copyTo(curImage);
 
     // Строит пары, пока изображение больше чем 9*9 пикселей
-    while (curImage.rows > 9 && curImage.cols > 9)
+    while (curImage.rows >= mHrPatchSize && curImage.cols >= mHrPatchSize)
     {
-        for (int i = 0; i < curImage.rows - 8; ++i)
+        for (int i = 0; i <= curImage.rows - mHrPatchSize; ++i)
         {
-            for (int j = 0; j < curImage.cols - 8; ++j)
+            for (int j = 0; j <= curImage.cols - mHrPatchSize; ++j)
             {
                 // Фрагмент высокого разрешения
-                cv::Mat HR(curImage, cv::Rect(j, i, 6, 6));
+                cv::Mat HR(curImage, cv::Rect(j, i, mHrPatchSize, mHrPatchSize));
 
                 // Фрагмент низкого разрешения
                 cv::Mat LR;
-                cv::resize(HR, LR, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HR, LR, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LR, HR));
 
                 // Зеркально отображены
                 cv::Mat HRZ;
                 cv::flip(HR, HRZ, 1);
                 cv::Mat LRZ;
-                cv::resize(HRZ, LRZ, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HRZ, LRZ, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LRZ, HRZ));
 
                 // Поворот на 90 градусов
                 cv::Mat HR90;
                 cv::rotate(HR, HR90, cv::ROTATE_90_CLOCKWISE);
                 cv::Mat LR90;
-                cv::resize(HR90, LR90, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HR90, LR90, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LR90, HR90));
 
                 // Поворот на 90 и зеркально
                 cv::Mat HRZ90;
                 cv::flip(HR90, HRZ90, 1);
                 cv::Mat LRZ90;
-                cv::resize(HRZ90, LRZ90, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HRZ90, LRZ90, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LRZ90, HRZ90));
 
                 // Поворот на 180 градусов
                 cv::Mat HR180;
                 cv::rotate(HR, HR180, cv::ROTATE_180);
                 cv::Mat LR180;
-                cv::resize(HR180, LR180, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HR180, LR180, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LR180, HR180));
 
                 // Поворот на 180 и зеркально
                 cv::Mat HRZ180;
                 cv::flip(HR180, HRZ180, 1);
                 cv::Mat LRZ180;
-                cv::resize(HRZ180, LRZ180, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HRZ180, LRZ180, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LRZ180, HRZ180));
 
                 // Поворот на 270 градусов
                 cv::Mat HR270;
                 cv::rotate(HR, HR270, cv::ROTATE_90_COUNTERCLOCKWISE);
                 cv::Mat LR270;
-                cv::resize(HR270, LR270, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HR270, LR270, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LR270, HR270));
 
                 // Поворот на 270 и зеркально
                 cv::Mat HRZ270;
                 cv::flip(HR270, HRZ270, 1);
                 cv::Mat LRZ270;
-                cv::resize(HRZ270, LRZ270, cv::Size(3, 3), cv::INTER_NEAREST);
+                cv::resize(HRZ270, LRZ270, cv::Size(mLrPatchSize, mLrPatchSize), cv::INTER_NEAREST);
                 mPairs.push_back(PairImag(LRZ270, HRZ270));
             }
         }
-        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.95, curImage.cols*0.95), cv::INTER_NEAREST);
+        cv::resize(curImage, curImage, cv::Size(curImage.rows*0.5, curImage.cols*0.5), cv::INTER_NEAREST);
     }
 
     std::cout << "Hash teor size = " << mPairs.size() << std::endl;
@@ -278,68 +255,207 @@ bool SISR::CreateLRHRPairs()
     hashUnity = 16;
     std::cout << "Hash unity = " << (uint)hashUnity << std::endl;
 
-    for (int i = 0; i < mPairs.size(); ++i)
+    if (save)
     {
-        const PairImag& p = mPairs[i];
-        mHash[qHash(p.first)].push_back(i);
+        QDir lrDir, hrDir;
+        lrDir.mkdir("lr");
+        lrDir.cd("lr");
+        hrDir.mkdir("hr");
+        hrDir.cd("hr");
+        for (int i = 0; i < mPairs.size(); ++i)
+        {
+            const PairImag& p = mPairs[i];
+            cv::Mat lr = p.first;
+            //cv::imwrite(lrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", lr);
+            cv::Mat hr = p.second;
+            //cv::imwrite(hrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", hr);
+            mHash[qHash(p.first)].push_back(i);
+        }
     }
+    std::cout << mPairs.size() << std::endl;
 
     return true;
 }
 
-bool SISR::AssemblyHRImage()
+bool SISR::AssemblyHRImage(bool save)
 {
     QList<int> nearestPairs;
     QList<double> dist;
     // Заполнение серым для контраста результата.
-    mHRImage.create(mLRImage.rows*2, mLRImage.cols*2, CV_8UC1);
-    for (int i = 0; i < mHRImage.rows; ++i)
+    cv::Mat tmpHR;
+    tmpHR.create(mLRImage.rows*2, mLRImage.cols*2, CV_64F);
+    for (int i = 0; i < tmpHR.rows; ++i)
     {
-        for (int j = 0; j < mHRImage.cols; ++j)
+        for (int j = 0; j < tmpHR.cols; ++j)
         {
-            mHRImage.at<uchar>(i,j) = 0;
+            tmpHR.at<double>(i,j) = 0;
         }
     }
+
+//    if (save)
+//    {
+//        for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 4)
+//        {
+//            for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 4)
+//            {
+//                cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
+//                std::string path = "E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_sr3/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg";
+//                cv::Mat sr3;
+//                sr3.create(8, 8, CV_8U);
+//                for (int i1 = 0; i < sr3.rows; ++i)
+//                {
+//                    for (int j1 = 0; j < sr3.cols; ++j)
+//                    {
+//                        sr3.at<uchar>(i,j) = 0;
+//                    }
+//                }
+//                QFileInfo info(QString::fromStdString(path));
+//                if (info.exists())
+//                {
+//                    sr3 = cv::imread(path, cv::IMREAD_GRAYSCALE ); // чтение изображения
+//                }
+
+//                // Построение фрагмента высокого разрешения.
+//                LRAHRInfo p;
+//                p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
+//                p.patchNums = nearestPairs;
+//                p.distToPatches = dist;
+//                p.LR = LRpart;
+//                p.HR = sr3;
+//                mPatches.push_back(p);
+
+//                for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
+//                {
+//                    for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
+//                    {
+//                        double hv = tmpHR.at<double>(ih, jh);
+//                        double pv = p.HR.at<uchar>(ip, jp);
+//                        if (std::abs(hv) < 1e-5)
+//                            tmpHR.at<double>(ih, jh) = pv;
+//                        else
+//                            tmpHR.at<double>(ih, jh) = (hv + pv) / 2.;
+//                    }
+//                }
+
+//            }
+//        }
+//    }
 
     sumT1 = 0;
     sumT2 = 0;
 
-    for (int i = 0; i < mLRImage.rows - 2; i += 1)
+    for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 4)
     {
-        for (int j = 0; j < mLRImage.cols - 2; j += 1)
+        for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 4)
         {
-            cv::Mat LRpart(mLRImage, cv::Rect(j, i, 3, 3));
+            cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
             GetNearestPairsIDS2(LRpart, nearestPairs, dist);
+
+            std::string path = "E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_sr3/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg";
+            cv::Mat sr3;
+            sr3.create(16, 16, CV_8U);
+            for (int i1 = 0; i1 < sr3.rows; ++i1)
+            {
+                for (int j1 = 0; j1 < sr3.cols; ++j1)
+                {
+                    sr3.at<uchar>(i1, j1) = 0;
+                }
+            }
+            QFileInfo info(QString::fromStdString(path));
+            if (info.exists())
+            {
+                sr3 = cv::imread(path, cv::IMREAD_GRAYSCALE ); // чтение изображения
+            }
 
             // Построение фрагмента высокого разрешения.
             LRAHRInfo p;
-            p.rect = cv::Rect(j, i, 3, 3);
+            p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
             p.patchNums = nearestPairs;
             p.distToPatches = dist;
             p.LR = LRpart;
-            p.HR = AssemblyHRPatch(nearestPairs);
+            p.HR = sr3;
             mPatches.push_back(p);
 
             for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
             {
                 for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
                 {
-                    int hv = mHRImage.at<uchar>(ih, jh);
-                    int pv = p.HR.at<uchar>(ip, jp);
-                    if (hv == 0)
-                        mHRImage.at<uchar>(ih, jh) = (uchar)pv;
+                    double hv = tmpHR.at<double>(ih, jh);
+                    double pv = p.HR.at<uchar>(ip, jp);
+                    if (std::abs(hv) < 1e-5)
+                        tmpHR.at<double>(ih, jh) = pv;
                     else
-                        mHRImage.at<uchar>(ih, jh) = (hv + pv) / 2;
+                        tmpHR.at<double>(ih, jh) = (hv + pv) / 2.;
                 }
             }
 
         }
     }
-    cv::resize(mHRImage, mHRImage, cv::Size(mLRImage.cols*2, mLRImage.rows*2), cv::INTER_CUBIC);
+    tmpHR.convertTo(mHRImage, CV_8U);
+
     std::cout << "GetNearestPairsIDS " << sumT1/1000. << std::endl;
     std::cout << "AssemblyHRPatch " << sumT2/1000. << std::endl;
     return true;
 }
+
+//bool SISR::AssemblyHRImage()
+//{
+//    QList<int> nearestPairs;
+//    QList<double> dist;
+//    // Заполнение серым для контраста результата.
+//    cv::Mat tmpHR;
+//    tmpHR.create(mLRImage.rows*2, mLRImage.cols*2, CV_64F);
+//    for (int i = 0; i < tmpHR.rows; ++i)
+//    {
+//        for (int j = 0; j < tmpHR.cols; ++j)
+//        {
+//            tmpHR.at<double>(i,j) = 0;
+//        }
+//    }
+
+//    sumT1 = 0;
+//    sumT2 = 0;
+
+//    for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 1)
+//    {
+//        for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 1)
+//        {
+//            cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
+//            GetNearestPairsIDS2(LRpart, nearestPairs, dist);
+
+//            //cv::imwrite("E:/nikita_files/nngu/diplom/sisr_images_fragments/lr/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg", LRpart);
+
+//            // Построение фрагмента высокого разрешения.
+//            LRAHRInfo p;
+//            p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
+//            p.patchNums = nearestPairs;
+//            p.distToPatches = dist;
+//            p.LR = LRpart;
+//            p.HR = AssemblyHRPatch(nearestPairs);
+//            //cv::imwrite("E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_my/" + std::to_string(2*i) + "_" + std::to_string(2*j) + ".jpg", p.HR);
+//            mPatches.push_back(p);
+
+//            for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
+//            {
+//                for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
+//                {
+//                    double hv = tmpHR.at<double>(ih, jh);
+//                    double pv = p.HR.at<uchar>(ip, jp);
+//                    if (std::abs(hv) < 1e-5)
+//                        tmpHR.at<double>(ih, jh) = pv;
+//                    else
+//                        tmpHR.at<double>(ih, jh) = (hv + pv) / 2.;
+//                }
+//            }
+
+//        }
+//    }
+//    tmpHR.convertTo(mHRImage, CV_8U);
+
+//    std::cout << "GetNearestPairsIDS " << sumT1/1000. << std::endl;
+//    std::cout << "AssemblyHRPatch " << sumT2/1000. << std::endl;
+//    return true;
+//}
 
 
 void SISR::GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist)

@@ -20,9 +20,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->comboBoxImageType->setVisible(false);
     ui->comboBoxImageType->clear();
-    ui->comboBoxImageType->addItems(QStringList() << QString("Grey") << QString("HSV_V") << QString("Haar_lin") << QString("Haar_cub")
-                                    << QString("Haar_SISR"));
-    ui->comboBoxImageType->setCurrentIndex(2);
+    ui->comboBoxImageType->addItems(QStringList() << QString("Grey") << QString("HSV_V") << QString("Haar_lin") << QString("DM_Grey"));
+    ui->comboBoxImageType->setCurrentIndex(3);
 
     DefaultTab();
 }
@@ -40,7 +39,7 @@ void MainWindow::on_pushButtonFilePath_clicked()
 //    {
 //        return; // ничего не указали
 //    }
-    QString dirPath("D:/nikita_files/nngu/diplom/sisr_images");
+    QString dirPath("E:/nikita_files/nngu/diplom/sisr_images");
     //QString dirPath("D:/projects/other/HR");
 
     // получение имён всех изображений
@@ -127,7 +126,6 @@ void MainWindow::on_pushButtonCount_clicked()
                 QString("PSNR = ") + QString::number(psnr) + QString("\n") +
                 QString("SSIM = ") + QString::number(ssim);
         ui->labelResultStatistic->setText(st);
-
     }
     // Повышение разрешения цветового изображения в палитре HSV. V повышается через sisr. Остальные кубическая.
     else if (ui->comboBoxImageType->currentText() == QString("HSV_V"))
@@ -219,29 +217,6 @@ void MainWindow::on_pushButtonCount_clicked()
         cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2GRAY);
         ui->Image2->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
 
-//        cv::Mat i1(4, 4, CV_8UC1);
-//        i1.at<uchar>(0, 0) = 1;
-//        i1.at<uchar>(0, 1) = 2;
-//        i1.at<uchar>(0, 2) = 3;
-//        i1.at<uchar>(0, 3) = 4;
-//        i1.at<uchar>(1, 0) = 4;
-//        i1.at<uchar>(1, 1) = 8;
-//        i1.at<uchar>(1, 2) = 6;
-//        i1.at<uchar>(1, 3) = 7;
-//        i1.at<uchar>(2, 0) = 8;
-//        i1.at<uchar>(2, 1) = 9;
-//        i1.at<uchar>(2, 2) = 1;
-//        i1.at<uchar>(2, 3) = 2;
-//        i1.at<uchar>(3, 0) = 3;
-//        i1.at<uchar>(3, 1) = 4;
-//        i1.at<uchar>(3, 2) = 5;
-//        i1.at<uchar>(3, 3) = 6;
-
-//        std::cout << i1 << std::endl;
-//        cv::Mat lrHaar = VaveletHaara(i1);
-//        std::cout << lrHaar << std::endl;
-//        std::cout << ReVaveletHaara(lrHaar) << std::endl;
-
         cv::Mat lrHaar = VaveletHaara(mLRImage1);
         cv::Mat rowHaar(lrHaar, cv::Rect(0, lrHaar.rows/2, lrHaar.cols/2, lrHaar.rows/2));
         cv::Mat colHaar(lrHaar, cv::Rect(lrHaar.cols/2, 0, lrHaar.cols/2, lrHaar.rows/2));
@@ -278,14 +253,60 @@ void MainWindow::on_pushButtonCount_clicked()
         ui->labelResultStatistic->setText(st);
     }
     // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из бикубической интерполяции разложения хаара начальной картинки.
-    else if (ui->comboBoxImageType->currentText() == QString("Haar_cub"))
+    else if (ui->comboBoxImageType->currentText() == QString("DM_Grey"))
     {
+        // вторая вкладка (исходное изображение)
+        cv::cvtColor(mStartImage, mHRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        cv::cvtColor(mLRImage, mLRImage1, cv::COLOR_RGB2GRAY);
+        ui->Image2->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
 
-    }
-    // Повышение чёрно-белого. Начальная картинка - основная часть изображения хаара. Уточняющая получается из повышения sisr разложения хаара начальной картинки.
-    else if (ui->comboBoxImageType->currentText() == QString("Haar_SISR"))
-    {
+        // третья вкладка (пары патчей)
+        s1.InitImage(mLRImage1);
+        QTime t1, t2;
+        t1.restart();
+        t2.restart();
+        s1.CreateLRHRPairs(true);
+        std::cout << "CreateLRHRPairs " << t1.restart()/1000. << std::endl;
 
+        ui->label1PartCur->setVisible(true);
+        ui->label1PartMax->setVisible(true);
+        ui->horizontalSlider1Part->setVisible(true);
+        ui->label1PartCur->setText(0);
+        ui->label1PartMax->setText(QString::number(s1.GetPairsCount()-1));
+        ui->horizontalSlider1Part->setMaximum(s1.GetPairsCount()-1);
+        ui->horizontalSlider1Part->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSlider1Part->setValue(0); // костыль, чтобы картинки обновились
+
+        // четвёртая вкладка, список подходящих патчей (сборка HR изображения)
+        t1.restart();
+        s1.AssemblyHRImage(true);
+        std::cout << "AssemblyHRImage " << t1.restart()/1000. << std::endl;
+        std::cout << "All time " << t2.restart()/1000. << std::endl;
+
+//        ui->horizontalSliderHRAssemb->setVisible(true);
+//        ui->labelCurPatch->setVisible(true);
+//        ui->labelPatchCount->setVisible(true);
+//        ui->labelCurPatch->setText(0);
+//        ui->labelPatchCount->setText(QString::number(s1.GetPatchesCount()-1));
+//        ui->horizontalSliderHRAssemb->setMaximum(s1.GetPatchesCount()-1);
+//        ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
+//        ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
+
+//        // пятая вкладка, результаты сборки изображения
+//        double rmse = SISR::RMSE(mHRImage1, s1.GetHRImage());
+//        double maxDev = SISR::MaxDeviation(mHRImage1, s1.GetHRImage());
+//        double psnr = SISR::PSNR(mHRImage1, s1.GetHRImage());
+//        double ssim = SISR::SSIM(mHRImage1, s1.GetHRImage());
+//        ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+//        ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
+//        ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+//        QString st = QString("Оценка результата:\n") +
+//                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
+//                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
+//                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
+//                QString("SSIM = ") + QString::number(ssim);
+//        ui->labelResultStatistic->setText(st);
     }
 }
 

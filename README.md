@@ -9,10 +9,11 @@
 
 1) Qt 5.x
 2) Microsoft Visual C++ Compiler 15.x
-3) PyTorch 2.2.1 + cu118
-4) torchvision 0.17.1
-5) matplotlib 3.8.3
-6) numpy 3.1
+3) Python 3.x
+4) PyTorch 2.2.1 + cu118
+5) torchvision 0.17.1
+6) matplotlib 3.8.3
+7) numpy 3.1
 
 ***Сборка и запуск***
 1) Клонировать проект и открыть в QtCreator

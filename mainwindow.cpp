@@ -4,7 +4,11 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    s1(parent),
+    s2(parent),
+    s3(parent),
+    s4(parent)
 {
     ui->setupUi(this);
 
@@ -21,7 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxImageType->setVisible(false);
     ui->comboBoxImageType->clear();
     ui->comboBoxImageType->addItems(QStringList() << QString("Grey") << QString("HSV_V") << QString("Haar_lin") << QString("DM_Grey"));
-    ui->comboBoxImageType->setCurrentIndex(3);
+    ui->comboBoxImageType->setCurrentIndex(0);
+
+    QObject::connect(&s1, &SISR::Message, this, &MainWindow::ShowMessage);
 
     DefaultTab();
 }
@@ -34,13 +40,11 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButtonFilePath_clicked()
 {
     // путь к папке с файлами
-//    QString dirPath = QFileDialog::getExistingDirectory(this, QString("Укажите директорию"));
-//    if (dirPath.size() == 0)
-//    {
-//        return; // ничего не указали
-//    }
-    QString dirPath("E:/nikita_files/nngu/diplom/sisr_images");
-    //QString dirPath("D:/projects/other/HR");
+    QString dirPath = QFileDialog::getExistingDirectory(this, QString("Укажите директорию"));
+    if (dirPath.size() == 0)
+    {
+        return; // ничего не указали
+    }
 
     // получение имён всех изображений
     QDir dir(dirPath);
@@ -284,29 +288,29 @@ void MainWindow::on_pushButtonCount_clicked()
         std::cout << "AssemblyHRImage " << t1.restart()/1000. << std::endl;
         std::cout << "All time " << t2.restart()/1000. << std::endl;
 
-//        ui->horizontalSliderHRAssemb->setVisible(true);
-//        ui->labelCurPatch->setVisible(true);
-//        ui->labelPatchCount->setVisible(true);
-//        ui->labelCurPatch->setText(0);
-//        ui->labelPatchCount->setText(QString::number(s1.GetPatchesCount()-1));
-//        ui->horizontalSliderHRAssemb->setMaximum(s1.GetPatchesCount()-1);
-//        ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
-//        ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
+        ui->horizontalSliderHRAssemb->setVisible(true);
+        ui->labelCurPatch->setVisible(true);
+        ui->labelPatchCount->setVisible(true);
+        ui->labelCurPatch->setText(0);
+        ui->labelPatchCount->setText(QString::number(s1.GetPatchesCount()-1));
+        ui->horizontalSliderHRAssemb->setMaximum(s1.GetPatchesCount()-1);
+        ui->horizontalSliderHRAssemb->setValue(1); // костыль, чтобы картинки обновились
+        ui->horizontalSliderHRAssemb->setValue(0); // костыль, чтобы картинки обновились
 
-//        // пятая вкладка, результаты сборки изображения
-//        double rmse = SISR::RMSE(mHRImage1, s1.GetHRImage());
-//        double maxDev = SISR::MaxDeviation(mHRImage1, s1.GetHRImage());
-//        double psnr = SISR::PSNR(mHRImage1, s1.GetHRImage());
-//        double ssim = SISR::SSIM(mHRImage1, s1.GetHRImage());
-//        ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
-//        ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
-//        ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
-//        QString st = QString("Оценка результата:\n") +
-//                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
-//                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
-//                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
-//                QString("SSIM = ") + QString::number(ssim);
-//        ui->labelResultStatistic->setText(st);
+        // пятая вкладка, результаты сборки изображения
+        double rmse = SISR::RMSE(mHRImage1, s1.GetHRImage());
+        double maxDev = SISR::MaxDeviation(mHRImage1, s1.GetHRImage());
+        double psnr = SISR::PSNR(mHRImage1, s1.GetHRImage());
+        double ssim = SISR::SSIM(mHRImage1, s1.GetHRImage());
+        ui->Result1->setPixmap(PixmapFromCVMat(mHRImage1, QImage::Format_Grayscale8));
+        ui->Result2->setPixmap(PixmapFromCVMat(s1.GetHRImage(), QImage::Format_Grayscale8));
+        ui->Result3->setPixmap(PixmapFromCVMat(mLRImage1, QImage::Format_Grayscale8));
+        QString st = QString("Оценка результата:\n") +
+                QString("Среднеквадратичное отклонение (RMSE) = ") + QString::number(rmse) + QString("\n") +
+                QString("Максимальное отклонение = ") + QString::number(maxDev) + QString("\n") +
+                QString("PSNR = ") + QString::number(psnr) + QString("\n") +
+                QString("SSIM = ") + QString::number(ssim);
+        ui->labelResultStatistic->setText(st);
     }
 }
 
@@ -562,7 +566,10 @@ cv::Mat MainWindow::UpscalePartImageGrey(const cv::Mat& image, int scale)
     return res;
 }
 
-
+void MainWindow::ShowMessage(const QString& msg)
+{
+    ui->label->setText(msg);
+}
 
 
 

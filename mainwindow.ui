@@ -142,7 +142,7 @@
        <attribute name="title">
         <string>Загрузка</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0">
         <item>
          <widget class="QFrame" name="frameFilePath">
           <property name="frameShape">
@@ -231,6 +231,13 @@
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string/>
+          </property>
          </widget>
         </item>
        </layout>
@@ -705,7 +712,7 @@
      <x>0</x>
      <y>0</y>
      <width>1113</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

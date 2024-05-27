@@ -59,6 +59,7 @@ public:
     QHBoxLayout *horizontalLayout_4;
     QLabel *startImage;
     QLabel *LRImage;
+    QLabel *label;
     QWidget *tabSplitColor;
     QGridLayout *gridLayout;
     QLabel *Image3;
@@ -272,6 +273,11 @@ public:
 
 
         verticalLayout->addWidget(frameImages);
+
+        label = new QLabel(tabLoad);
+        label->setObjectName(QString::fromUtf8("label"));
+
+        verticalLayout->addWidget(label);
 
         verticalLayout->setStretch(1, 1);
         tabWidget->addTab(tabLoad, QString());
@@ -625,7 +631,7 @@ public:
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 1113, 20));
+        menuBar->setGeometry(QRect(0, 0, 1113, 21));
         MainWindow->setMenuBar(menuBar);
         mainToolBar = new QToolBar(MainWindow);
         mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -653,6 +659,7 @@ public:
         pushButtonFilePath->setText(QCoreApplication::translate("MainWindow", "\320\236\321\202\320\272\321\200\321\213\321\202\321\214", nullptr));
         startImage->setText(QString());
         LRImage->setText(QString());
+        label->setText(QString());
         tabWidget->setTabText(tabWidget->indexOf(tabLoad), QCoreApplication::translate("MainWindow", "\320\227\320\260\320\263\321\200\321\203\320\267\320\272\320\260", nullptr));
         Image3->setText(QString());
         Image1->setText(QString());

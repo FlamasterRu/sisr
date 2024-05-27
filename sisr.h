@@ -15,6 +15,10 @@
 #include <QTime>
 #include <QFileInfo>
 #include <QDir>
+#include <QProcess>
+#include <memory>
+#include <QCoreApplication>
+#include <QDebug>
 
 /// \brief Возвращает основную часть изображения из дискретного вейвлет преобразования Хаара
 cv::Mat VaveletHaaraMain(const cv::Mat& image);
@@ -44,10 +48,11 @@ struct LRAHRInfo
 };
 
 /// \brief Класс содержащий вариации алгоритма повышения разрешения одиночного изображения.
-class SISR
+class SISR : public QObject
 {
+    Q_OBJECT
 public:
-    SISR();
+    explicit SISR(QObject* parent = nullptr) : QObject{parent}{}
 
     /// \brief Задаёт начальное изображение низкого разрешения.
     bool InitImage(const cv::Mat& image);
@@ -94,6 +99,16 @@ public:
     /// \brief Максимальное значение пикселя.
     static double Max(const cv::Mat& image);
 
+signals:
+    /// \brief Передаёт сообщение из в пользовательский интерфейс.
+    void Message(const QString& msg);
+
+public slots:
+    /// \brief Обрабатывает вывод скрипта ни питоне.
+    void ReadPythonOutput();
+
+    /// \brief Обрабатывает вывод ошибок скрипта ни питоне.
+    void ReadPythonErrors();
 
 private:
     // Поиск подходящих пар LR-HR для LR
@@ -122,6 +137,7 @@ private:
     QList<LRAHRInfo> mPatches;
 
     double sumT1, sumT2;
-};
 
+    std::unique_ptr<QProcess> python;
+};
 #endif // SISR_H

@@ -125,10 +125,6 @@ uint qHash(const cv::Mat& image)
     return res;
 }
 
-SISR::SISR()
-{
-
-}
 
 int SISR::GetPairsCount()
 {
@@ -266,9 +262,9 @@ bool SISR::CreateLRHRPairs(bool save)
         {
             const PairImag& p = mPairs[i];
             cv::Mat lr = p.first;
-            //cv::imwrite(lrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", lr);
+            cv::imwrite(lrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", lr);
             cv::Mat hr = p.second;
-            //cv::imwrite(hrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", hr);
+            cv::imwrite(hrDir.absolutePath().toStdString() + "/" + std::to_string(i) + ".jpg", hr);
             mHash[qHash(p.first)].push_back(i);
         }
     }
@@ -292,54 +288,35 @@ bool SISR::AssemblyHRImage(bool save)
         }
     }
 
-//    if (save)
-//    {
-//        for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 4)
-//        {
-//            for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 4)
-//            {
-//                cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
-//                std::string path = "E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_sr3/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg";
-//                cv::Mat sr3;
-//                sr3.create(8, 8, CV_8U);
-//                for (int i1 = 0; i < sr3.rows; ++i)
-//                {
-//                    for (int j1 = 0; j < sr3.cols; ++j)
-//                    {
-//                        sr3.at<uchar>(i,j) = 0;
-//                    }
-//                }
-//                QFileInfo info(QString::fromStdString(path));
-//                if (info.exists())
-//                {
-//                    sr3 = cv::imread(path, cv::IMREAD_GRAYSCALE ); // чтение изображения
-//                }
+    if (save)
+    {
+        QDir lr_f;
+        lr_f.mkdir("lr_f");
+        lr_f.mkdir("hr_f");
+        lr_f.cd("lr_f");
+        for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 4)
+        {
+            for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 4)
+            {
+                cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
+                std::string path = lr_f.absolutePath().toStdString() + "/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg";
+                cv::imwrite(path, LRpart);
+            }
+        }
 
-//                // Построение фрагмента высокого разрешения.
-//                LRAHRInfo p;
-//                p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
-//                p.patchNums = nearestPairs;
-//                p.distToPatches = dist;
-//                p.LR = LRpart;
-//                p.HR = sr3;
-//                mPatches.push_back(p);
+        lr_f.cdUp();
+        QStringList args;
+        args << lr_f.absolutePath() + "/dm.py" << "--dataset" << lr_f.absolutePath();
+        python = std::make_unique<QProcess>(this);
+        connect(python.get(), &QProcess::readyReadStandardOutput, this, &SISR::ReadPythonOutput);
+        connect(python.get(), &QProcess::readyReadStandardError, this, &SISR::ReadPythonErrors);
+        python->start("python", args);
+        while (!python->waitForFinished(100))
+        {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        }
+    }
 
-//                for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
-//                {
-//                    for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
-//                    {
-//                        double hv = tmpHR.at<double>(ih, jh);
-//                        double pv = p.HR.at<uchar>(ip, jp);
-//                        if (std::abs(hv) < 1e-5)
-//                            tmpHR.at<double>(ih, jh) = pv;
-//                        else
-//                            tmpHR.at<double>(ih, jh) = (hv + pv) / 2.;
-//                    }
-//                }
-
-//            }
-//        }
-//    }
 
     sumT1 = 0;
     sumT2 = 0;
@@ -351,29 +328,37 @@ bool SISR::AssemblyHRImage(bool save)
             cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
             GetNearestPairsIDS2(LRpart, nearestPairs, dist);
 
-            std::string path = "E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_sr3/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg";
-            cv::Mat sr3;
-            sr3.create(16, 16, CV_8U);
-            for (int i1 = 0; i1 < sr3.rows; ++i1)
-            {
-                for (int j1 = 0; j1 < sr3.cols; ++j1)
-                {
-                    sr3.at<uchar>(i1, j1) = 0;
-                }
-            }
-            QFileInfo info(QString::fromStdString(path));
-            if (info.exists())
-            {
-                sr3 = cv::imread(path, cv::IMREAD_GRAYSCALE ); // чтение изображения
-            }
-
             // Построение фрагмента высокого разрешения.
             LRAHRInfo p;
             p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
             p.patchNums = nearestPairs;
             p.distToPatches = dist;
             p.LR = LRpart;
-            p.HR = sr3;
+            if (save)
+            {
+                QDir hr_f;
+                hr_f.cd("hr_f");
+                cv::Mat sr3;
+                sr3.create(16, 16, CV_8U);
+                for (int i1 = 0; i1 < sr3.rows; ++i1)
+                {
+                    for (int j1 = 0; j1 < sr3.cols; ++j1)
+                    {
+                        sr3.at<uchar>(i1, j1) = 0;
+                    }
+                }
+                QString path = hr_f.absolutePath() + "/" + QString::number(i) + "_" + QString::number(j) + ".jpg";
+                QFileInfo info(path);
+                if (info.exists())
+                {
+                    sr3 = cv::imread(path.toStdString(), cv::IMREAD_GRAYSCALE ); // чтение изображения
+                }
+                p.HR = sr3;
+            }
+            else
+            {
+                p.HR = AssemblyHRPatch(nearestPairs);
+            }
             mPatches.push_back(p);
 
             for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
@@ -397,66 +382,6 @@ bool SISR::AssemblyHRImage(bool save)
     std::cout << "AssemblyHRPatch " << sumT2/1000. << std::endl;
     return true;
 }
-
-//bool SISR::AssemblyHRImage()
-//{
-//    QList<int> nearestPairs;
-//    QList<double> dist;
-//    // Заполнение серым для контраста результата.
-//    cv::Mat tmpHR;
-//    tmpHR.create(mLRImage.rows*2, mLRImage.cols*2, CV_64F);
-//    for (int i = 0; i < tmpHR.rows; ++i)
-//    {
-//        for (int j = 0; j < tmpHR.cols; ++j)
-//        {
-//            tmpHR.at<double>(i,j) = 0;
-//        }
-//    }
-
-//    sumT1 = 0;
-//    sumT2 = 0;
-
-//    for (int i = 0; i <= mLRImage.rows - mLrPatchSize; i += 1)
-//    {
-//        for (int j = 0; j <= mLRImage.cols - mLrPatchSize; j += 1)
-//        {
-//            cv::Mat LRpart(mLRImage, cv::Rect(j, i, mLrPatchSize, mLrPatchSize));
-//            GetNearestPairsIDS2(LRpart, nearestPairs, dist);
-
-//            //cv::imwrite("E:/nikita_files/nngu/diplom/sisr_images_fragments/lr/" + std::to_string(i) + "_" + std::to_string(j) + ".jpg", LRpart);
-
-//            // Построение фрагмента высокого разрешения.
-//            LRAHRInfo p;
-//            p.rect = cv::Rect(j, i, mLrPatchSize, mLrPatchSize);
-//            p.patchNums = nearestPairs;
-//            p.distToPatches = dist;
-//            p.LR = LRpart;
-//            p.HR = AssemblyHRPatch(nearestPairs);
-//            //cv::imwrite("E:/nikita_files/nngu/diplom/sisr_images_fragments/hr_my/" + std::to_string(2*i) + "_" + std::to_string(2*j) + ".jpg", p.HR);
-//            mPatches.push_back(p);
-
-//            for (int ih = 2*i, ip = 0; ip < p.HR.rows; ++ih, ++ip)
-//            {
-//                for (int jh = 2*j, jp = 0; jp < p.HR.cols; ++jh, ++jp)
-//                {
-//                    double hv = tmpHR.at<double>(ih, jh);
-//                    double pv = p.HR.at<uchar>(ip, jp);
-//                    if (std::abs(hv) < 1e-5)
-//                        tmpHR.at<double>(ih, jh) = pv;
-//                    else
-//                        tmpHR.at<double>(ih, jh) = (hv + pv) / 2.;
-//                }
-//            }
-
-//        }
-//    }
-//    tmpHR.convertTo(mHRImage, CV_8U);
-
-//    std::cout << "GetNearestPairsIDS " << sumT1/1000. << std::endl;
-//    std::cout << "AssemblyHRPatch " << sumT2/1000. << std::endl;
-//    return true;
-//}
-
 
 void SISR::GetNearestPairsIDS(const cv::Mat& part, QList<int>& nearest, QList<double>& dist)
 {
@@ -681,3 +606,14 @@ double SISR::Max(const cv::Mat& image)
     return res;
 }
 
+void SISR::ReadPythonOutput()
+{
+    QString tmp  =python->readAllStandardOutput();
+    emit Message(tmp);
+}
+
+void SISR::ReadPythonErrors()
+{
+    QString tmp = python->readAllStandardError();
+    emit Message(tmp);
+}

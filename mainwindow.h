@@ -11,6 +11,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 #include <QTime>
+#include <QString>
 
 
 
@@ -26,6 +27,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public slots:
+    void ShowMessage(const QString& msg);
 
 private slots:
     void on_pushButtonFilePath_clicked();   // открыть папку с картинками
